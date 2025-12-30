@@ -8,15 +8,12 @@
  * Author URI: 
  */
 
-
 if ( ! defined( 'ABSPATH' ) ) {
-    exit; // Sortie si accès direct
+    // Sortie si accès direct
+    exit; 
 }
-// --- AJOUTEZ CECI ---
+
 error_log("🚀 [APPLICOMPTA] Le plugin principal est chargé !");
-// --------------------
-
-
 
 // 1. Chargement de l'autoloader Composer (pour JWT)
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
@@ -36,7 +33,7 @@ define('APPLICOMPTA_PLUGIN_URL', plugin_dir_url(__FILE__));
 // 3. Initialisation de l'API REST
 require_once APPLICOMPTA_PLUGIN_DIR . 'Api/rest-routes.php';
 
-// --- GESTION CODE PWA (Alternative aux App Passwords cassés) ---
+// 1. GESTION CODE PWA (Alternative aux App Passwords cassés) 
 
 // 1. Afficher le champ dans le profil
 add_action('show_user_profile', 'gce_pwa_custom_password_field');
@@ -76,7 +73,6 @@ function gce_save_pwa_custom_password($user_id) {
     }
 }
 
-
 function applicompta_encrypt($data) {
     if (empty($data)) return false;
     return base64_encode(openssl_encrypt($data, 'aes-256-cbc', APPLICOMPTA_SHARED_SECRET_KEY, 0, APPLICOMPTA_SHARED_IV));
@@ -87,11 +83,7 @@ function applicompta_decrypt($encrypted_data) {
     return openssl_decrypt(base64_decode($encrypted_data), 'aes-256-cbc', APPLICOMPTA_SHARED_SECRET_KEY, 0, APPLICOMPTA_SHARED_IV);
 }
 
-/**
- * ---------------------------------------------------------
- * 2. INTERFACE ADMIN : CHAMP CLÉ API INVOICE NINJA
- * ---------------------------------------------------------
- */
+// 2. INTERFACE ADMIN : CHAMP CLÉ API INVOICE NINJA
 add_action('show_user_profile', 'applicompta_add_ninja_field');
 add_action('edit_user_profile', 'applicompta_add_ninja_field');
 

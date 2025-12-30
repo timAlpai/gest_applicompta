@@ -22,8 +22,7 @@ register_rest_route('applicompta/v1', '/ninja/clients/(?P<id>[a-zA-Z0-9]+)', [
     'permission_callback' => 'applicompta_check_jwt_permission',
 ]);
 
-// --- FONCTIONS ---
-
+// FONCTIONS 
 function applicompta_get_ninja_clients() {
     $token = applicompta_get_ninja_token();
     if (is_wp_error($token)) return $token;

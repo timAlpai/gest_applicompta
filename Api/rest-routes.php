@@ -11,7 +11,8 @@ add_action('rest_api_init', function () {
     require_once __DIR__ . '/routes/auth-routes.php';
     require_once __DIR__ . '/routes/ninja-routes.php'; 
     require_once __DIR__ . '/routes/utils-routes.php'; 
-     require_once __DIR__ . '/routes/clients-routes.php';
+    require_once __DIR__ . '/routes/clients-routes.php';
+    require_once __DIR__ . '/routes/documents-routes.php';
     // Ici, vous pourrez ajouter d'autres fichiers de routes plus tard :
     // require_once __DIR__ . '/routes/comptes-routes.php';
     // require_once __DIR__ . '/routes/factures-routes.php';
