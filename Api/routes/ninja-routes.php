@@ -11,7 +11,7 @@ register_rest_route('applicompta/v1', '/ninja/account', [
     'permission_callback' => 'applicompta_check_jwt_permission', // Notre middleware de sécu
 ]);
 
-// --- FONCTION PRINCIPALE ---
+// Fonction principale
 function applicompta_get_ninja_account(WP_REST_Request $request) {
     // L'utilisateur courant a été défini par le permission_callback
     $user_id = get_current_user_id();
@@ -53,7 +53,7 @@ function applicompta_get_ninja_account(WP_REST_Request $request) {
     return new WP_REST_Response($data, 200);
 }
 
-// --- MIDDLEWARE DE SÉCURITÉ JWT ---
+// Middleware de sécurité JWT
 function applicompta_check_jwt_permission(WP_REST_Request $request) {
     $auth_header = $request->get_header('Authorization');
     
@@ -72,7 +72,8 @@ function applicompta_check_jwt_permission(WP_REST_Request $request) {
         return false;
     }
 }
-// 2. NOUVELLE ROUTE : Mise à jour des infos (PUT)
+
+// 2. Nouvelle route : Mise à jour des infos (PUT)
 register_rest_route('applicompta/v1', '/ninja/account', [
     'methods'  => 'POST', // On utilise POST pour simplifier, mais on fera un PUT vers Ninja
     'callback' => 'applicompta_update_ninja_account',
@@ -97,7 +98,7 @@ function applicompta_update_ninja_account(WP_REST_Request $request) {
         'Content-Type' => 'application/json',
     ];
 
-    // 2. D'ABORD : On récupère la fiche actuelle complète pour ne rien perdre
+    // 2. D'abord, on récupère la fiche actuelle complète pour ne rien perdre
     $get_response = wp_remote_get($url, ['headers' => $headers, 'timeout' => 20]);
 
     if (is_wp_error($get_response)) {
@@ -108,7 +109,7 @@ function applicompta_update_ninja_account(WP_REST_Request $request) {
     // Invoice Ninja met parfois les données dans une clé 'data', parfois à la racine selon l'endpoint
     $company_data = isset($current_data['data']) ? $current_data['data'] : $current_data;
 
-    // 3. ENSUITE : On modifie JUSTE l'adresse et le contact dans l'objet existant
+    // 3. Ensuite, on modifie juste l'adresse et le contact dans l'objet existant
     // On ne touche PAS à currency_id, language_id, etc.
     if (!isset($company_data['settings'])) { $company_data['settings'] = []; }
 
