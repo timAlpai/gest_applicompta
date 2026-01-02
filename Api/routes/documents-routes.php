@@ -277,3 +277,112 @@ function applicompta_convert_ninja_quote($request) {
 }
 
 
+// ... (Après les routes existantes)
+
+// 6. CRÉER / MAJ FACTURE (POST)
+register_rest_route('applicompta/v1', '/ninja/invoices', [
+    'methods'  => 'POST',
+    'callback' => 'applicompta_save_ninja_invoice',
+    'permission_callback' => 'applicompta_check_jwt_permission',
+]);
+
+// 7. SUPPRIMER FACTURE (DELETE)
+register_rest_route('applicompta/v1', '/ninja/invoices/(?P<id>[^/]+)', [
+    'methods'  => 'DELETE',
+    'callback' => 'applicompta_delete_ninja_invoice',
+    'permission_callback' => 'applicompta_check_jwt_permission',
+]);
+
+// --- CALLBACKS FACTURES ---
+
+function applicompta_save_ninja_invoice($request) {
+    if (!function_exists('applicompta_get_ninja_token')) {
+        return new WP_Error('sys_error', 'Erreur interne.', ['status' => 500]);
+    }
+    $token = applicompta_get_ninja_token();
+    if (is_wp_error($token)) return $token;
+
+    $params = $request->get_json_params();
+    $invoice_id = $params['id'] ?? null;
+
+    if (empty($params['client_id'])) {
+        return new WP_Error('missing_data', 'Client obligatoire', ['status' => 400]);
+    }
+
+    // Traitement des lignes
+    $line_items = [];
+    if (!empty($params['line_items']) && is_array($params['line_items'])) {
+        foreach ($params['line_items'] as $line) {
+            $line_items[] = [
+                'notes'    => sanitize_textarea_field($line['notes'] ?? ''),
+                'cost'     => (float) ($line['cost'] ?? 0),
+                'quantity' => (float) ($line['quantity'] ?? 1),
+            ];
+        }
+    }
+
+    $payload = [
+        'client_id' => sanitize_text_field($params['client_id']),
+        'date' => sanitize_text_field($params['date']),
+        'public_notes' => sanitize_textarea_field($params['public_notes']),
+        'line_items' => $line_items
+    ];
+
+    // Détermination URL (POST ou PUT)
+    $url = rtrim(INVOICENINJA_API_URL, '/') . '/invoices';
+    $method = 'POST';
+
+    if ($invoice_id) {
+        $url .= '/' . $invoice_id;
+        $method = 'PUT';
+    }
+
+    $response = wp_remote_request($url, [
+        'method' => $method, // PUT ou POST
+        'headers' => [
+            'X-API-Token' => $token, 
+            'Content-Type' => 'application/json',
+            'X-Requested-With' => 'XMLHttpRequest'
+        ],
+        'body' => json_encode($payload),
+        'timeout' => 20
+    ]);
+
+    if (is_wp_error($response)) {
+        return new WP_Error('ninja_connect_error', $response->get_error_message(), ['status' => 500]);
+    }
+
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+    $code = wp_remote_retrieve_response_code($response);
+
+    if ($code !== 200 && $code !== 201) {
+        $msg = $body['message'] ?? 'Erreur inconnue';
+        return new WP_Error('ninja_error', 'Erreur sauvegarde : ' . $msg, ['status' => $code]);
+    }
+
+    return new WP_REST_Response($body, 200);
+}
+
+function applicompta_delete_ninja_invoice($request) {
+    $token = applicompta_get_ninja_token();
+    if (is_wp_error($token)) return $token;
+
+    $invoice_id = $request['id'];
+    // Invoice Ninja utilise DELETE pour supprimer/archiver
+    $url = rtrim(INVOICENINJA_API_URL, '/') . '/invoices/' . $invoice_id;
+
+    $response = wp_remote_request($url, [
+        'method' => 'DELETE',
+        'headers' => ['X-API-Token' => $token, 'X-Requested-With' => 'XMLHttpRequest'],
+        'timeout' => 20
+    ]);
+
+    if (is_wp_error($response)) return $response;
+    
+    $code = wp_remote_retrieve_response_code($response);
+    if ($code !== 200) {
+        return new WP_Error('delete_error', 'Impossible de supprimer la facture.', ['status' => $code]);
+    }
+
+    return new WP_REST_Response(['success' => true], 200);
+}
