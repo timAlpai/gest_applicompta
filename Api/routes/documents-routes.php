@@ -26,16 +26,45 @@ function applicompta_get_ninja_quotes() {
 
 // Fonction générique privée pour éviter la duplication
 function applicompta_fetch_documents($endpoint_type) {
-    // Récupération du token
+    // 1. AUTHENTIFICATION
     $user_id = get_current_user_id();
     $encrypted = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);
     if (!$encrypted) return new WP_Error('no_token', 'Token manquant', ['status' => 403]);
     $token = applicompta_decrypt($encrypted);
 
-    // URL Ninja (ex: .../invoices ou .../quotes)
-    // On ajoute ?include=client pour avoir le nom du client directement
-    $url = rtrim(INVOICENINJA_API_URL, '/') . '/' . $endpoint_type . '?include=client&status=active';
+    // 2. PRÉPARATION DES PARAMÈTRES API
+    // Paramètres communs
+    $api_params = [
+        'include' => 'client', // On veut toujours les infos du client
+        'per_page' => 1000,    // On s'assure de récupérer une large liste
+    ];
 
+    // LOGIQUE DE DIFFÉRENCIATION
+    if ($endpoint_type === 'quotes') {
+        // --- CAS DES DEVIS ---
+        // On demande à Ninja de ne renvoyer que les "actifs" (masque les archivés/supprimés)
+        $api_params['status'] = 'active'; 
+        // On trie par numéro décroissant (le plus récent en haut)
+        $api_params['sort'] = 'number|desc';
+
+    } elseif ($endpoint_type === 'invoices') {
+        // --- CAS DES FACTURES ---
+        // ATTENTION : On ne met SURTOUT PAS 'status' => 'active' ici, car cela renvoie 0 résultat.
+        // On peut soit laisser vide (tout récupérer), soit lister explicitement les statuts voulus.
+        // Ici, on laisse vide pour avoir : Draft, Sent, Paid, Partial, Past Due, etc.
+        
+        // On peut aussi trier les factures
+        $api_params['sort'] = 'number|desc';
+    }
+
+    // 3. CRÉATION DE LA CHAÎNE DE REQUÊTE (Query String)
+    // http_build_query transforme le tableau ['a'=>'b'] en "a=b" proprement
+    $query_string = http_build_query($api_params);
+    
+    // Construction de l'URL finale
+    $url = rtrim(INVOICENINJA_API_URL, '/') . '/' . $endpoint_type . '?' . $query_string;
+
+    // 4. APPEL API
     $response = wp_remote_get($url, [
         'headers' => ['X-API-Token' => $token, 'X-Requested-With' => 'XMLHttpRequest'],
         'timeout' => 20
@@ -44,7 +73,30 @@ function applicompta_fetch_documents($endpoint_type) {
     if (is_wp_error($response)) return $response;
     
     $body = json_decode(wp_remote_retrieve_body($response), true);
-    return new WP_REST_Response($body, 200);
+    $raw_data = isset($body['data']) ? $body['data'] : $body;
+
+    // 5. NETTOYAGE FINAL (FILTRAGE PHP)
+    // On garde ce filtrage pour les cas spécifiques que l'API ne gère pas (ex: devis convertis)
+    $clean_data = [];
+    
+    if (is_array($raw_data)) {
+        foreach ($raw_data as $doc) {
+            
+            // Sécurité : ignorer les supprimés si l'API en renvoie quand même
+            if (!empty($doc['is_deleted']) || !empty($doc['archived_at'])) {
+                continue;
+            }
+
+            // Spécifique DEVIS : Cacher ceux qui sont convertis en facture
+            if ($endpoint_type === 'quotes' && !empty($doc['invoice_id'])) {
+                continue;
+            }
+
+            $clean_data[] = $doc;
+        }
+    }
+
+    return new WP_REST_Response($clean_data, 200);
 }
 
 // Garder les routes GET existantes
