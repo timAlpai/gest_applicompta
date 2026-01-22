@@ -15,6 +15,8 @@ add_action('rest_api_init', function () {
     require_once __DIR__ . '/routes/documents-routes.php';
     require_once __DIR__ . '/routes/ia-routes.php';
     require_once __DIR__ . '/routes/expenses-routes.php';
+    require_once __DIR__ . '/routes/pdf-routes.php';
+
     // Ici, vous pourrez ajouter d'autres fichiers de routes plus tard :
     // require_once __DIR__ . '/routes/comptes-routes.php';
     // require_once __DIR__ . '/routes/factures-routes.php';

@@ -48,6 +48,14 @@ function applicompta_get_ninja_account(WP_REST_Request $request) {
 
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body, true);
+    // On injecte les données WP DIRECTEMENT dans le premier élément de la liste Ninja
+    if (isset($data['data'][0])) {
+        $data['data'][0]['smtp_host'] = get_user_meta($user_id, 'smtp_host', true);
+        $data['data'][0]['smtp_port'] = get_user_meta($user_id, 'smtp_port', true);
+        $data['data'][0]['smtp_user'] = get_user_meta($user_id, 'smtp_user', true);
+        $data['data'][0]['html_template'] = get_user_meta($user_id, 'html_template', true);
+        $data['data'][0]['logo_url'] = get_user_meta($user_id, 'logo_url', true);
+    }
 
     // 3. Retourner les données
     return new WP_REST_Response($data, 200);
@@ -81,8 +89,20 @@ register_rest_route('applicompta/v1', '/ninja/account', [
 ]);
 
 function applicompta_update_ninja_account(WP_REST_Request $request) {
-    $user_id = get_current_user_id();
+       $user_id = get_current_user_id();
     $params = $request->get_json_params();
+    
+    // --- NOUVEAU : Sauvegarder d'abord les infos propres à WordPress ---
+    if (isset($params['smtp_host'])) update_user_meta($user_id, 'smtp_host', sanitize_text_field($params['smtp_host']));
+    if (isset($params['smtp_port'])) update_user_meta($user_id, 'smtp_port', sanitize_text_field($params['smtp_port']));
+    if (isset($params['smtp_user'])) update_user_meta($user_id, 'smtp_user', sanitize_text_field($params['smtp_user']));
+    if (isset($params['html_template'])) update_user_meta($user_id, 'html_template', $params['html_template']); // Pas de sanitize trop strict ici car c'est du HTML
+    if (isset($params['logo_url'])) update_user_meta($user_id, 'logo_url', sanitize_text_field($params['logo_url']));
+    
+    // Si un mot de passe est fourni, on le crypte
+    if (!empty($params['smtp_pass'])) {
+        update_user_meta($user_id, 'smtp_pass_enc', applicompta_smtp_encrypt($params['smtp_pass']));
+    }
     
     // 1. Décrypter le token
     $encrypted_token = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);

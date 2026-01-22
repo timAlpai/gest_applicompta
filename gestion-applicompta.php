@@ -127,3 +127,61 @@ function applicompta_save_ninja_field($user_id) {
         update_user_meta($user_id, 'invoiceninja_token_encrypted', $encrypted);
     }
 }
+
+// 1. Chiffrement bidirectionnel pour le SMTP
+function applicompta_smtp_encrypt($data) {
+    if (empty($data)) return false;
+    return base64_encode(openssl_encrypt($data, 'aes-256-cbc', APPLICOMPTA_SHARED_SECRET_KEY, 0, APPLICOMPTA_SHARED_IV));
+}
+
+function applicompta_smtp_decrypt($encrypted_data) {
+    if (empty($encrypted_data)) return false;
+    return openssl_decrypt(base64_decode($encrypted_data), 'aes-256-cbc', APPLICOMPTA_SHARED_SECRET_KEY, 0, APPLICOMPTA_SHARED_IV);
+}
+
+// 2. Champs Admin pour les réglages SMTP et Template
+add_action('show_user_profile', 'applicompta_user_settings_fields');
+add_action('edit_user_profile', 'applicompta_user_settings_fields');
+
+function applicompta_user_settings_fields($user) {
+    $smtp_pass = applicompta_smtp_decrypt(get_user_meta($user->ID, 'smtp_pass_enc', true));
+    ?>
+    <h3>Paramètres d'envoi Devis & Factures</h3>
+    <table class="form-table">
+        <tr>
+            <th>SMTP Host / Port</th>
+            <td>
+                <input type="text" name="smtp_host" value="<?php echo esc_attr(get_user_meta($user->ID, 'smtp_host', true)); ?>" placeholder="smtp.domain.com" />
+                <input type="number" name="smtp_port" value="<?php echo esc_attr(get_user_meta($user->ID, 'smtp_port', true)); ?>" placeholder="465" />
+            </td>
+        </tr>
+        <tr>
+            <th>SMTP User / Pass</th>
+            <td>
+                <input type="text" name="smtp_user" value="<?php echo esc_attr(get_user_meta($user->ID, 'smtp_user', true)); ?>" />
+                <input type="password" name="smtp_pass" value="<?php echo esc_attr($smtp_pass); ?>" />
+            </td>
+        </tr>
+        <tr>
+            <th>Template HTML Personnel</th>
+            <td>
+                <textarea name="html_template" rows="10" style="width:100%; font-family:monospace;"><?php echo esc_textarea(get_user_meta($user->ID, 'html_template', true)); ?></textarea>
+                <p class="description">Utilisez {{CLIENT_NAME}}, {{TOTAL}}, {{TABLE_ITEMS}}, {{SIGN_LINK}} comme variables.</p>
+            </td>
+        </tr>
+    </table>
+    <?php
+}
+
+add_action('personal_options_update', 'applicompta_save_user_settings');
+add_action('edit_user_profile_update', 'applicompta_save_user_settings');
+
+function applicompta_save_user_settings($user_id) {
+    update_user_meta($user_id, 'smtp_host', sanitize_text_field($_POST['smtp_host']));
+    update_user_meta($user_id, 'smtp_port', sanitize_text_field($_POST['smtp_port']));
+    update_user_meta($user_id, 'smtp_user', sanitize_text_field($_POST['smtp_user']));
+    if(!empty($_POST['smtp_pass'])) {
+        update_user_meta($user_id, 'smtp_pass_enc', applicompta_smtp_encrypt($_POST['smtp_pass']));
+    }
+    update_user_meta($user_id, 'html_template', $_POST['html_template']);
+}
