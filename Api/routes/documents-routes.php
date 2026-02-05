@@ -166,42 +166,6 @@ register_rest_route('applicompta/v1', '/ninja/quotes/(?P<id>[^/]+)/convert', [
     'permission_callback' => 'applicompta_check_jwt_permission',
 ]);
 
-function applicompta_convert_ninja_quote($request) {
-    $token = applicompta_get_ninja_token();
-    if (is_wp_error($token)) return $token;
-
-    $quote_id = $request['id'];
-    
-    // VERIFICATION SIGNATURE (Utilise l'ID Ninja comme clé méta)
-    $is_signed = get_post_meta($quote_id, 'is_quote_signed', true); 
-
-    if (!$is_signed) {
-        return new WP_Error('not_signed', 'Le devis doit être signé électroniquement avant d\'être converti.', ['status' => 403]);
-    }
-
-    $url = rtrim(INVOICENINJA_API_URL, '/') . '/quotes/bulk';
-    $payload = [
-        'ids' => [$quote_id],
-        'action' => 'convert_to_invoice'
-    ];
-
-    $response = wp_remote_post($url, [
-        'headers' => [
-            'X-API-Token' => $token, 
-            'Content-Type' => 'application/json',
-            'X-Requested-With' => 'XMLHttpRequest'
-        ],
-        'body' => json_encode($payload),
-        'timeout' => 20
-    ]);
-
-    if (is_wp_error($response)) return $response;
-
-    $code = wp_remote_retrieve_response_code($response);
-    if ($code !== 200) return new WP_Error('convert_error', 'Erreur conversion', ['status' => $code]);
-
-    return new WP_REST_Response(['success' => true, 'message' => 'Devis converti'], 200);
-}
 
 // 6. ENVOI DEVIS PAR EMAIL
 register_rest_route('applicompta/v1', '/ninja/quotes/(?P<id>[^/]+)/send', [
@@ -306,35 +270,46 @@ function applicompta_send_quote_email($request) {
 }
 
 function applicompta_generate_pdf_via_gotenberg($html_content) {
-    $gotenberg_url = 'http://127.0.0.1:3000/forms/chromium/convert/html';
+    $url = 'http://127.0.0.1:3000/forms/chromium/convert/html';
     
-    // On utilise HttpClient de Symfony (déjà présent dans votre vendor)
-    $client = HttpClient::create();
+    // 1. On génère un boundary unique
+    $boundary = '--------------------------' . microtime(true);
+    
+    // 2. On construit le corps manuellement
+    // Gotenberg 8 EXIGE : 
+    // - Les deux tirets -- devant le boundary
+    // - Des sauts de ligne \r\n (CRLF) très précis
+    // - Le champ "files" avec le nom "index.html"
+    $payload = "--" . $boundary . "\r\n";
+    $payload .= "Content-Disposition: form-data; name=\"files\"; filename=\"index.html\"\r\n";
+    $payload .= "Content-Type: text/html\r\n\r\n";
+    $payload .= $html_content . "\r\n";
+    $payload .= "--" . $boundary . "--\r\n";
 
-    try {
-        $response = $client->request('POST', $gotenberg_url, [
-            'body' => [
-                // Gotenberg 8 attend un champ nommé "files" contenant le fichier
-                'files' => [
-                    'filename' => 'index.html',
-                    'content'  => $html_content,
-                    'content_type' => 'text/html'
-                ]
-            ],
-            'timeout' => 30
-        ]);
+    // 3. Envoi via WordPress avec les headers forcés
+    $response = wp_remote_post($url, [
+        'headers' => [
+            'Content-Type' => 'multipart/form-data; boundary=' . $boundary,
+        ],
+        'body'    => $payload,
+        'timeout' => 60, // On laisse du temps pour les gros PDF
+        'blocking' => true
+    ]);
 
-        if ($response->getStatusCode() !== 200) {
-            error_log("Gotenberg Error (" . $response->getStatusCode() . "): " . $response->getContent(false));
-            return false;
-        }
-
-        return $response->getContent();
-
-    } catch (\Exception $e) {
-        error_log("Exception Gotenberg : " . $e->getMessage());
+    if (is_wp_error($response)) {
+        error_log("Gotenberg Connection Error: " . $response->get_error_message());
         return false;
     }
+
+    $code = wp_remote_retrieve_response_code($response);
+    $body = wp_remote_retrieve_body($response);
+
+    if ($code !== 200) {
+        error_log("Gotenberg Error ($code): " . $body);
+        return false;
+    }
+
+    return $body; // Binaire du PDF
 }
 
 function applicompta_send_custom_smtp_email($user_id, $quote, $recipient_email, $pdf_content) {
@@ -464,4 +439,108 @@ function applicompta_delete_ninja_invoice($request) {
     $url = rtrim(INVOICENINJA_API_URL, '/') . '/invoices/' . $request['id'];
     $response = wp_remote_request($url, ['method' => 'DELETE', 'headers' => ['X-API-Token' => $token]]);
     return is_wp_error($response) ? $response : new WP_REST_Response(['success' => true], 200);
+}
+register_rest_route('applicompta/v1', '/public/sign-quote', [
+    'methods'  => 'POST',
+    'callback' => 'applicompta_handle_public_signature',
+    'permission_callback' => '__return_true', // Doit être public pour le client final
+]);
+/**
+ * 1. LE HANDLER DE SIGNATURE (Côté Public)
+ */
+function applicompta_handle_public_signature(WP_REST_Request $request) {
+    $params = $request->get_json_params();
+    $quote_id = $params['id'] ?? '';
+    $token = $params['token'] ?? '';
+    $pro_id = $params['u'] ?? ''; // L'ID du professionnel (ex: 3)
+
+    if (empty($quote_id) || empty($pro_id)) {
+        return new WP_Error('missing_data', 'Données manquantes', ['status' => 400]);
+    }
+
+    // Vérification sécurité
+    $expected_token = wp_hash($quote_id . $pro_id);
+    if ($token !== $expected_token) {
+        return new WP_Error('invalid_token', 'Lien expiré.', ['status' => 403]);
+    }
+
+    // ON STOCKÉ LA SIGNATURE DANS LE COMPTE DU PRO
+    $sig_key = 'sig_quote_' . $quote_id;
+    $sig_data = [
+        'signed_at' => current_time('mysql'),
+        'ip' => $_SERVER['REMOTE_ADDR']
+    ];
+    
+    // update_user_meta fonctionne même pour les clés textuelles
+    update_user_meta($pro_id, $sig_key, $sig_data);
+
+    return new WP_REST_Response(['success' => true], 200);
+}
+// Fonction pour envoyer le mail après signature
+function applicompta_send_signature_confirmation($user_id, $quote_id) {
+    $host = get_user_meta($user_id, 'smtp_host', true);
+    $user_email = get_user_meta($user_id, 'smtp_user', true); // L'email du pro
+    $pass = applicompta_smtp_decrypt(get_user_meta($user_id, 'smtp_pass_enc', true));
+
+    if (!$host || !$user_email || !$pass) return;
+
+    require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+    require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+    require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP();
+        $mail->Host = $host;
+        $mail->SMTPAuth = true;
+        $mail->Username = $user_email;
+        $mail->Password = $pass;
+        $mail->Port = (int)get_user_meta($user_id, 'smtp_port', true);
+        $mail->SMTPSecure = ($mail->Port === 465) ? 'ssl' : 'tls';
+
+        $mail->setFrom($user_email, "Applicompta");
+        $mail->addAddress($user_email); // On envoie une copie au Pro
+        
+        $mail->isHTML(true);
+        $mail->Subject = "Devis Signe ! (ID: $quote_id)";
+        $mail->Body    = "Bonne nouvelle, votre devis <b>$quote_id</b> a été signé électroniquement par votre client à " . current_time('H:i');
+
+        $mail->send();
+    } catch (Exception $e) {
+        error_log("Erreur mail confirmation signature: " . $mail->ErrorInfo);
+    }
+}
+
+/**
+ * 2. LA FONCTION DE CONVERSION (Côté Pro)
+ */
+function applicompta_convert_ninja_quote($request) {
+    $token = applicompta_get_ninja_token();
+    if (is_wp_error($token)) return $token;
+
+    $user_id = get_current_user_id(); // Le Pro connecté à la PWA (ID 3)
+    $quote_id = $request['id'];
+    
+    $sig_key = 'sig_quote_' . $quote_id;
+    $sig_data = get_user_meta($user_id, $sig_key, true);
+
+    if (!$sig_data || empty($sig_data['signed_at'])) {
+        return new WP_Error('not_signed', 'Signature électronique introuvable pour ce devis.', ['status' => 403]);
+    }
+
+    // Appel Invoice Ninja pour la conversion
+    $url = rtrim(INVOICENINJA_API_URL, '/') . '/quotes/bulk';
+    $payload = ['ids' => [$quote_id], 'action' => 'convert_to_invoice'];
+
+    $response = wp_remote_post($url, [
+        'headers' => [
+            'X-API-Token' => $token, 
+            'Content-Type' => 'application/json',
+            'X-Requested-With' => 'XMLHttpRequest'
+        ],
+        'body' => json_encode($payload)
+    ]);
+
+    if (is_wp_error($response)) return $response;
+    return new WP_REST_Response(['success' => true], 200);
 }
