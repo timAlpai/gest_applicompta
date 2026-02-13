@@ -16,14 +16,14 @@ function applicompta_handle_login(WP_REST_Request $request) {
     $password = $params['password'] ?? ''; 
 
     if (empty($username) || empty($password)) {
-        return new WP_Error('missing_creds', 'Identifiants manquants.', ['status' => 400]);
+        return new WP_Error('missing_creds', __('Identifiants manquants.', 'applicompta'), ['status' => 400]);
     }
 
     $user = get_user_by('login', $username);
     if (!$user) $user = get_user_by('email', $username);
 
     if (!$user) {
-        return new WP_Error('invalid_user', 'Utilisateur introuvable.', ['status' => 403]);
+        return new WP_Error('invalid_user', __('Utilisateur introuvable.', 'applicompta'), ['status' => 403]);
     }
 
     $is_valid = false;
@@ -48,7 +48,7 @@ function applicompta_handle_login(WP_REST_Request $request) {
     }
 
     if (!$is_valid) {
-        return new WP_Error('invalid_auth', 'Mot de passe incorrect.', ['status' => 403]);
+        return new WP_Error('invalid_auth', __('Mot de passe incorrect.', 'applicompta'), ['status' => 403]);
     }
 
     // --- GÉNÉRATION JWT ---
@@ -71,7 +71,7 @@ function applicompta_handle_login(WP_REST_Request $request) {
     try {
         $jwt = JWT::encode($payload, $secret, 'HS256');
     } catch (Exception $e) {
-        return new WP_Error('jwt_error', 'Erreur technique.', ['status' => 500]);
+        return new WP_Error('jwt_error', __('Erreur technique.', 'applicompta'), ['status' => 500]);
     }
 
     return new WP_REST_Response([
@@ -94,7 +94,7 @@ register_rest_route('applicompta/v1', '/auth/refresh', [
 function applicompta_handle_refresh(WP_REST_Request $request) {
     $auth_header = $request->get_header('Authorization');
     if (!$auth_header || !preg_match('/Bearer\s+(.*)$/i', $auth_header, $matches)) {
-        return new WP_Error('missing_token', 'Token manquant.', ['status' => 400]);
+        return new WP_Error('missing_token', __('Token manquant.', 'applicompta'), ['status' => 400]);
     }
 
     $jwt = $matches[1];
@@ -111,13 +111,13 @@ function applicompta_handle_refresh(WP_REST_Request $request) {
         // Mais pour plus de contrôle, on peut aussi vérifier manuellement `exp`
         $now = time();
         if ($decoded->exp < $now - 300) { // refus si expiré depuis +5 min
-            return new WP_Error('token_expired', 'Token expiré.', ['status' => 403]);
+            return new WP_Error('token_expired', __('Token expiré.', 'applicompta'), ['status' => 403]);
         }
 
         // On récupère les données utilisateur via l’ID (sécurité supplémentaire)
         $user = get_user_by('ID', $decoded->data->user_id);
         if (!$user) {
-            return new WP_Error('invalid_user', 'Utilisateur introuvable.', ['status' => 403]);
+            return new WP_Error('invalid_user', __('Utilisateur introuvable.', 'applicompta'), ['status' => 403]);
         }
 
         // Générer un **nouveau token** avec +60 minutes
@@ -144,6 +144,6 @@ function applicompta_handle_refresh(WP_REST_Request $request) {
         ], 200);
 
     } catch (Exception $e) {
-        return new WP_Error('invalid_token', 'Token invalide ou corrompu.', ['status' => 403]);
+        return new WP_Error('invalid_token', __('Token invalide ou corrompu.', 'applicompta'), ['status' => 403]);
     }
 }

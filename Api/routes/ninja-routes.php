@@ -20,13 +20,13 @@ function applicompta_get_ninja_account(WP_REST_Request $request) {
     $encrypted_token = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);
     
     if (!$encrypted_token) {
-        return new WP_Error('no_token', 'Aucune clé API Invoice Ninja configurée pour cet utilisateur.', ['status' => 404]);
+        return new WP_Error('no_token', __('Aucune clé API Invoice Ninja configurée pour cet utilisateur.', 'applicompta'), ['status' => 404]);
     }
 
     $api_token = applicompta_decrypt($encrypted_token);
 
     if (!$api_token) {
-        return new WP_Error('decrypt_error', 'Erreur de déchiffrement de la clé.', ['status' => 500]);
+        return new WP_Error('decrypt_error', __('Erreur de déchiffrement de la clé.', 'applicompta'), ['status' => 500]);
     }
 
     // 2. Appel à Invoice Ninja
@@ -106,7 +106,7 @@ function applicompta_update_ninja_account(WP_REST_Request $request) {
     
     // 1. Décrypter le token
     $encrypted_token = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);
-    if (!$encrypted_token) return new WP_Error('no_token', 'Token manquant', ['status' => 403]);
+    if (!$encrypted_token) return new WP_Error('no_token', __('Token manquant', 'applicompta'), ['status' => 403]);
     $api_token = applicompta_decrypt($encrypted_token);
 
     $company_id = $params['company_id'];
@@ -122,7 +122,7 @@ function applicompta_update_ninja_account(WP_REST_Request $request) {
     $get_response = wp_remote_get($url, ['headers' => $headers, 'timeout' => 20]);
 
     if (is_wp_error($get_response)) {
-        return new WP_Error('ninja_read_error', 'Impossible de lire les données actuelles.', ['status' => 502]);
+        return new WP_Error('ninja_read_error', __('Impossible de lire les données actuelles.', 'applicompta'), ['status' => 502]);
     }
 
     $current_data = json_decode(wp_remote_retrieve_body($get_response), true);

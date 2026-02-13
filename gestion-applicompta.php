@@ -7,24 +7,59 @@
  * Author: T&G Consulting
  * Author URI: 
  */
-
+error_reporting(E_ALL); ini_set('display_errors', 1);
 if ( ! defined( 'ABSPATH' ) ) {
     // Sortie si accès direct
     exit; 
 }
-// Ajoutez ceci après vos définitions de constantes
+/**
+ * Charge les fichiers de traduction (.mo) depuis le dossier /languages
+ */
+function applicompta_load_textdomain() {
+    load_plugin_textdomain('applicompta', false, dirname(plugin_basename(__FILE__)) . '/languages');
+}
+add_action('init', 'applicompta_load_textdomain');
+/**
+ * Détecte la langue envoyée par la PWA et change le local de WordPress
+ */
 add_action('rest_api_init', function() {
+    
+    // 1. GESTION DU CORS (Indispensable pour portal.applicompta.be)
     remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
+    
     add_filter('rest_pre_serve_request', function($value) {
         header('Access-Control-Allow-Origin: https://portal.applicompta.be');
         header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
         header('Access-Control-Allow-Credentials: true');
-        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
+        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Accept-Language, X-App-Lang');
+        
+        // Si c'est une requête de vérification (OPTIONS), on arrête WP et on renvoie les headers
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            status_header(200);
+            exit;
+        }
+        
         return $value;
     });
-}, 15);
-error_log("🚀 [APPLICOMPTA] Le plugin principal est chargé !");
 
+    // 2. GESTION DE LA LANGUE (Version robuste sans getallheaders)
+    $lang_header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'fr';
+    $lang = substr($lang_header, 0, 2); // On prend "fr" ou "en"
+
+    $locales = [
+        'fr' => 'fr_FR',
+        'en' => 'en_US',
+        'nl' => 'nl_NL',
+        'es' => 'es_ES',
+        'de' => 'de_DE',
+    ];
+
+    $locale = isset($locales[$lang]) ? $locales[$lang] : 'fr_FR';
+    
+    unload_textdomain('applicompta');
+    switch_to_locale($locale);
+    
+}, 5);
 // 1. Chargement de l'autoloader Composer (pour JWT)
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
@@ -51,13 +86,13 @@ add_action('edit_user_profile', 'gce_pwa_custom_password_field');
 
 function gce_pwa_custom_password_field($user) {
     ?>
-    <h3>Connexion PWA Applicompta</h3>
+    <h3><?php echo esc_html__('Connexion PWA Applicompta', 'applicompta'); ?></h3>
     <table class="form-table">
         <tr>
-            <th><label for="pwa_access_code">Code d'accès PWA</label></th>
+            <th><label for="pwa_access_code"><?php echo esc_html__('Code d\'accès PWA', 'applicompta'); ?></label></th>
             <td>
-                <input type="text" name="pwa_access_code" id="pwa_access_code" value="" class="regular-text" placeholder="Définir un nouveau code ici" />
-                <p class="description">Utilisez ce code spécifique pour vous connecter à l'application mobile. (Laissez vide pour ne pas changer)</p>
+                <input type="text" name="pwa_access_code" id="pwa_access_code" value="" class="regular-text" placeholder="<?php echo esc_attr__("Définir un nouveau code ici", 'applicompta'); ?>" />
+                <p class="description"><?php echo esc_html__("Utilisez ce code spécifique pour vous connecter à l'application mobile. (Laissez vide pour ne pas changer)", 'applicompta'); ?></p>
             </td>
         </tr>
     </table>
@@ -102,13 +137,13 @@ function applicompta_add_ninja_field($user) {
     $encrypted_key = get_user_meta($user->ID, 'invoiceninja_token_encrypted', true);
     $placeholder = $encrypted_key ? "Une clé est déjà enregistrée (laissez vide pour conserver)" : "Collez la clé API ici";
     ?>
-    <h3>Intégration Invoice Ninja v5</h3>
+    <h3><?php echo esc_html__('Intégration Invoice Ninja v5', 'applicompta'); ?></h3>
     <table class="form-table">
         <tr>
-            <th><label for="ninja_api_key">Clé API (Token)</label></th>
+            <th><label for="ninja_api_key"><?php echo esc_html__('Clé API (Token)', 'applicompta'); ?></label></th>
             <td>
-                <input type="text" name="ninja_api_key" id="ninja_api_key" value="" class="regular-text" placeholder="<?php echo esc_attr($placeholder); ?>" />
-                <p class="description">La clé sera chiffrée en base de données.</p>
+                <input type="text" name="ninja_api_key" id="ninja_api_key" value="" class="regular-text" placeholder="<?php echo esc_attr( $placeholder ); ?>" />
+                <p class="description"><?php echo esc_html__('La clé sera chiffrée en base de données.', 'applicompta'); ?></p>
             </td>
         </tr>
     </table>

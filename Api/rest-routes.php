@@ -1,6 +1,6 @@
 <?php
 defined('ABSPATH') || exit;
-error_log("🚀 [APPLICOMPTA] Le rest-routes est chargé !");
+error_log( __('🚀 [APPLICOMPTA] Le rest-routes est chargé !', 'applicompta') );
 
 /**
  * Enregistrement des routes API lors de l'initialisation REST de WordPress
@@ -27,7 +27,7 @@ add_action('rest_api_init', function () {
         'callback' => function() {
             return [
                 'success' => true,
-                'message' => 'Hello World! Le plugin est bien connecté.'
+                'message' => __('Hello World! Le plugin est bien connecté.', 'applicompta')
             ];
         },
         'permission_callback' => '__return_true', // Public

@@ -12,7 +12,7 @@ function applicompta_handle_ia_devis(WP_REST_Request $request) {
     $user_prompt = sanitize_textarea_field($params['prompt'] ?? '');
 
     if (!defined('GROQ_API_KEY') || !defined('GROQ_BASE_URL')) {
-        return new WP_Error('config_error', 'Configuration Groq manquante.', ['status' => 500]);
+        return new WP_Error('config_error', __('Configuration Groq manquante.', 'applicompta'), ['status' => 500]);
     }
 
     try {
@@ -64,7 +64,7 @@ function applicompta_handle_ia_devis(WP_REST_Request $request) {
         ], 200);
 
     } catch (Exception $e) {
-        error_log('Erreur IA Applicompta : ' . $e->getMessage());
-        return new WP_Error('ia_api_error', 'Erreur : ' . $e->getMessage(), ['status' => 500]);
+        error_log( sprintf(__('Erreur IA Applicompta : %s', 'applicompta'), $e->getMessage()) );
+        return new WP_Error('ia_api_error', sprintf( __('Erreur : %s', 'applicompta'), $e->getMessage() ), ['status' => 500]);
     }
 }

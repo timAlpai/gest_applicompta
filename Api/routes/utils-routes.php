@@ -23,7 +23,7 @@ function applicompta_get_dynamic_lists(WP_REST_Request $request) {
     $encrypted_token = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);
     
     if (!$encrypted_token) {
-        return new WP_Error('no_token', 'Token requis pour charger les listes.', ['status' => 403]);
+        return new WP_Error('no_token', __('Token requis pour charger les listes.', 'applicompta'), ['status' => 403]);
     }
     $api_token = applicompta_decrypt($encrypted_token);
 

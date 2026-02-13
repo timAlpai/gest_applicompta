@@ -101,6 +101,6 @@ function applicompta_delete_ninja_client($request) {
 function applicompta_get_ninja_token() {
     $user_id = get_current_user_id();
     $encrypted = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);
-    if (!$encrypted) return new WP_Error('no_token', 'Token manquant', ['status' => 403]);
+    if (!$encrypted) return new WP_Error('no_token', __('Token manquant', 'applicompta'), ['status' => 403]);
     return applicompta_decrypt($encrypted);
 }

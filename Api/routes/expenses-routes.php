@@ -20,7 +20,7 @@ function applicompta_handle_receipt_scan(WP_REST_Request $request) {
     $image_data = $params['image'] ?? ''; 
 
     if (empty($image_data)) {
-        return new WP_Error('no_image', 'Image manquante', ['status' => 400]);
+        return new WP_Error('no_image', __('Image manquante', 'applicompta'), ['status' => 400]);
     }
 
     // Nettoyage du base64 (on retire le préfixe data:image/jpeg;base64,)
@@ -88,7 +88,7 @@ Si une info est absente, retourne une chaîne vide \"\". Ne réponds aucun texte
         ], 200);
 
     } catch (Exception $e) {
-        error_log('Erreur Vision Groq : ' . $e->getMessage());
+        error_log( sprintf(__('Erreur Vision Groq : %s', 'applicompta'), $e->getMessage()) );
         return new WP_Error('vision_error', $e->getMessage(), ['status' => 500]);
     }
 }

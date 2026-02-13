@@ -28,7 +28,7 @@ function applicompta_get_ninja_quotes() {
 function applicompta_fetch_documents($endpoint_type) {
     $user_id = get_current_user_id();
     $encrypted = get_user_meta($user_id, 'invoiceninja_token_encrypted', true);
-    if (!$encrypted) return new WP_Error('no_token', 'Token manquant', ['status' => 403]);
+    if (!$encrypted) return new WP_Error('no_token', __('Token manquant', 'applicompta'), ['status' => 403]);
     $token = applicompta_decrypt($encrypted);
 
     $api_params = [
@@ -83,7 +83,7 @@ function applicompta_create_ninja_quote($request) {
     $quote_id = $params['id'] ?? null;
 
     if (empty($params['client_id'])) {
-        return new WP_Error('missing_data', 'Client obligatoire', ['status' => 400]);
+        return new WP_Error('missing_data', __('Client obligatoire', 'applicompta'), ['status' => 400]);
     }
 
     $line_items = [];
@@ -129,7 +129,8 @@ function applicompta_create_ninja_quote($request) {
     $code = wp_remote_retrieve_response_code($response);
 
     if ($code !== 200 && $code !== 201) {
-        return new WP_Error('ninja_error', 'Erreur sauvegarde : ' . ($body['message'] ?? 'Inconnue'), ['status' => $code]);
+        $msg = $body['message'] ?? __('Inconnue', 'applicompta');
+        return new WP_Error('ninja_error', sprintf( __('Erreur sauvegarde : %s', 'applicompta'), $msg ), ['status' => $code]);
     }
 
     return new WP_REST_Response($body, 200);
@@ -190,7 +191,7 @@ function applicompta_send_quote_email($request) {
     ]);
     
     $body = json_decode(wp_remote_retrieve_body($res), true);
-    if (!isset($body['data'])) return new WP_Error('ninja_err', 'Devis introuvable');
+    if (!isset($body['data'])) return new WP_Error('ninja_err', __('Devis introuvable', 'applicompta'));
     
     $quote = $body['data'];
 
@@ -219,7 +220,7 @@ function applicompta_send_quote_email($request) {
     }
 
     if (empty($recipient_email)) {
-        return new WP_Error('no_email', 'Le client n’a aucune adresse email valide.', ['status' => 400]);
+        return new WP_Error('no_email', __('Le client n’a aucune adresse email valide.', 'applicompta'), ['status' => 400]);
     }
 
     error_log("Email destinataire validé : " . $recipient_email);
@@ -242,7 +243,7 @@ function applicompta_send_quote_email($request) {
 
     $sign_token = wp_hash($quote_id . $user_id);
     $sign_url = "https://portal.applicompta.be/sign.html?id=$quote_id&token=$sign_token&u=$user_id";
-    $sign_button = "<a href='$sign_url' style='display:inline-block; padding:12px 25px; background:#27ae60; color:white; text-decoration:none; border-radius:5px; font-weight:bold;'>Accepter et Signer en ligne</a>";
+    $sign_button = "<a href='$sign_url' style='display:inline-block; padding:12px 25px; background:#27ae60; color:white; text-decoration:none; border-radius:5px; font-weight:bold;'>" . esc_html__('Accepter et Signer en ligne', 'applicompta') . "</a>";
 
     $replacements = [
         '{{LOGO_URL}}'      => $logo_url,
@@ -263,7 +264,7 @@ function applicompta_send_quote_email($request) {
     error_log($final_html);
     // 4. GOTENBERG PDF
     $pdf_content = applicompta_generate_pdf_via_gotenberg($final_html);
-    if (!$pdf_content) return new WP_Error('pdf_err', 'Erreur Gotenberg');
+    if (!$pdf_content) return new WP_Error('pdf_err', __('Erreur Gotenberg', 'applicompta'));
     error_log($pdf_content);
     // 5. ENVOI SMTP
     return applicompta_send_custom_smtp_email($user_id, $quote, $recipient_email, $pdf_content);
@@ -297,7 +298,7 @@ function applicompta_generate_pdf_via_gotenberg($html_content) {
     ]);
 
     if (is_wp_error($response)) {
-        error_log("Gotenberg Connection Error: " . $response->get_error_message());
+        error_log( sprintf( __('Gotenberg Connection Error: %s', 'applicompta'), $response->get_error_message() ) );
         return false;
     }
 
@@ -305,7 +306,7 @@ function applicompta_generate_pdf_via_gotenberg($html_content) {
     $body = wp_remote_retrieve_body($response);
 
     if ($code !== 200) {
-        error_log("Gotenberg Error ($code): " . $body);
+        error_log( sprintf(__('Gotenberg Error (%d): %s', 'applicompta'), $code, $body) );
         return false;
     }
 
@@ -319,7 +320,7 @@ function applicompta_send_custom_smtp_email($user_id, $quote, $recipient_email, 
     $pass = applicompta_smtp_decrypt(get_user_meta($user_id, 'smtp_pass_enc', true));
 
     if (!$host || !$user || !$pass) {
-        return new WP_Error('smtp_cfg', 'Configuration SMTP incomplète dans votre profil.');
+        return new WP_Error('smtp_cfg', __('Configuration SMTP incomplète dans votre profil.', 'applicompta'));
     }
 
     require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
@@ -372,11 +373,11 @@ function applicompta_send_custom_smtp_email($user_id, $quote, $recipient_email, 
         $mail->Body    = "Bonjour,<br><br>Veuillez trouver ci-joint notre proposition commerciale.<br><br>Cordialement.";
 
         $mail->send();
-        return new WP_REST_Response(['success' => true, 'message' => "Email envoyé avec succès à $recipient_email"], 200);
+        return new WP_REST_Response(['success' => true, 'message' => sprintf(__('Email envoyé avec succès à %s', 'applicompta'), $recipient_email)], 200);
 
     } catch (Exception $e) {
-        error_log("Détail Erreur SMTP : " . $mail->ErrorInfo);
-        return new WP_Error('smtp_fail', "Erreur d'authentification : " . $mail->ErrorInfo, ['status' => 500]);
+        error_log( sprintf( __('Détail Erreur SMTP : %s', 'applicompta'), $mail->ErrorInfo ) );
+        return new WP_Error('smtp_fail', sprintf( __('Erreur d\'authentification : %s', 'applicompta'), $mail->ErrorInfo ), ['status' => 500]);
     }
 }
 
@@ -455,13 +456,13 @@ function applicompta_handle_public_signature(WP_REST_Request $request) {
     $pro_id = $params['u'] ?? ''; // L'ID du professionnel (ex: 3)
 
     if (empty($quote_id) || empty($pro_id)) {
-        return new WP_Error('missing_data', 'Données manquantes', ['status' => 400]);
+        return new WP_Error('missing_data', __('Données manquantes', 'applicompta'), ['status' => 400]);
     }
 
     // Vérification sécurité
     $expected_token = wp_hash($quote_id . $pro_id);
     if ($token !== $expected_token) {
-        return new WP_Error('invalid_token', 'Lien expiré.', ['status' => 403]);
+        return new WP_Error('invalid_token', __('Lien expiré.', 'applicompta'), ['status' => 403]);
     }
 
     // ON STOCKÉ LA SIGNATURE DANS LE COMPTE DU PRO
@@ -502,12 +503,12 @@ function applicompta_send_signature_confirmation($user_id, $quote_id) {
         $mail->addAddress($user_email); // On envoie une copie au Pro
         
         $mail->isHTML(true);
-        $mail->Subject = "Devis Signe ! (ID: $quote_id)";
+        $mail->Subject = sprintf( __('Devis signé ! (ID: %s)', 'applicompta'), $quote_id );
         $mail->Body    = "Bonne nouvelle, votre devis <b>$quote_id</b> a été signé électroniquement par votre client à " . current_time('H:i');
 
         $mail->send();
     } catch (Exception $e) {
-        error_log("Erreur mail confirmation signature: " . $mail->ErrorInfo);
+        error_log( sprintf(__('Erreur mail confirmation signature: %s', 'applicompta'), $mail->ErrorInfo) );
     }
 }
 
@@ -525,7 +526,7 @@ function applicompta_convert_ninja_quote($request) {
     $sig_data = get_user_meta($user_id, $sig_key, true);
 
     if (!$sig_data || empty($sig_data['signed_at'])) {
-        return new WP_Error('not_signed', 'Signature électronique introuvable pour ce devis.', ['status' => 403]);
+        return new WP_Error('not_signed', __('Signature électronique introuvable pour ce devis.', 'applicompta'), ['status' => 403]);
     }
 
     // Appel Invoice Ninja pour la conversion
