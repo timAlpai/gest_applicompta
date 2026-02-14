@@ -94,20 +94,14 @@ msgid "Erreur de déchiffrement de la clé."
 msgstr "Anahtarın şifre çözme hatası."
 
 #: Api/routes/ninja-routes.php:109,125
+#: Api/routes/clients-routes.php:104
+#: Api/routes/documents-routes.php:31
 msgid "Token manquant"
 msgstr "Token eksik"
 
 #: Api/routes/ninja-routes.php:125
 msgid "Impossible de lire les données actuelles."
 msgstr "Mevcut veriler okunamıyor."
-
-#: Api/routes/clients-routes.php:104
-msgid "Token manquant"
-msgstr "Token eksik"
-
-#: Api/routes/documents-routes.php:31
-msgid "Token manquant"
-msgstr ""
 
 #: Api/routes/utils-routes.php:26
 msgid "Token requis pour charger les listes."
