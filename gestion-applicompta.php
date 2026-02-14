@@ -51,7 +51,10 @@ add_action('rest_api_init', function() {
         'en' => 'en_US',
         'nl' => 'nl_NL',
         'es' => 'es_ES',
-        'de' => 'de_DE',
+        'pl' => 'pl_PL',
+        'pt' => 'pt_PT',
+        'tr' => 'tr_TR',
+        'ro' => 'ro_RO',
     ];
 
     $locale = isset($locales[$lang]) ? $locales[$lang] : 'fr_FR';

@@ -1,0 +1,206 @@
+# Translation file for gest_applicompta plugin
+# Copyright (C) 2026 T&G Consulting
+# This file is distributed under the same license as the gest_applicompta package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gest_applicompta 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-12 00:00+0000\n"
+"PO-Revision-Date: 2026-02-12 00:00+0000\n"
+"Last-Translator: Auto-generated <dev@local>\n"
+"Language-Team: Dutch\n"
+"Language: nl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Poedit-Basepath: .\n"
+
+#: gestion-applicompta.php:54
+msgid "🚀 [APPLICOMPTA] Le plugin principal est chargé !"
+msgstr "🚀 [APPLICOMPTA] De hoofdplugin is geladen!"
+
+#: gestion-applicompta.php:82
+msgid "Connexion PWA Applicompta"
+msgstr "Applicompta PWA-verbinding"
+
+#: gestion-applicompta.php:85
+msgid "Code d'accès PWA"
+msgstr "PWA-toegangscode"
+
+#: gestion-applicompta.php:87
+msgid "Définir un nouveau code ici"
+msgstr "Stel hier een nieuwe code in"
+
+#: gestion-applicompta.php:88
+msgid "Utilisez ce code spécifique pour vous connecter à l'application mobile. (Laissez vide pour ne pas changer)"
+msgstr "Gebruik deze specifieke code om in te loggen in de mobiele app. (Leeg laten om niet te wijzigen)"
+
+#: gestion-applicompta.php:133
+msgid "Intégration Invoice Ninja v5"
+msgstr "Integratie Invoice Ninja v5"
+
+#: gestion-applicompta.php:136
+msgid "Clé API (Token)"
+msgstr "API-sleutel (token)"
+
+#: gestion-applicompta.php:139
+msgid "La clé sera chiffrée en base de données."
+msgstr "De sleutel wordt in de database versleuteld."
+
+#: Api/rest-routes.php:3
+msgid "🚀 [APPLICOMPTA] Le rest-routes est chargé !"
+msgstr "🚀 [APPLICOMPTA] De rest-routes is geladen!"
+
+#: Api/rest-routes.php:30
+msgid "Hello World! Le plugin est bien connecté."
+msgstr "Hallo wereld! De plugin is correct verbonden."
+
+#: Api/routes/auth-routes.php:19
+msgid "Identifiants manquants."
+msgstr "Ontbrekende inloggegevens."
+
+#: Api/routes/auth-routes.php:26
+msgid "Utilisateur introuvable."
+msgstr "Gebruiker niet gevonden."
+
+#: Api/routes/auth-routes.php:51
+msgid "Mot de passe incorrect."
+msgstr "Onjuist wachtwoord."
+
+#: Api/routes/auth-routes.php:74
+msgid "Erreur technique."
+msgstr "Technische fout."
+
+#: Api/routes/auth-routes.php:97
+msgid "Token manquant."
+msgstr "Token ontbreekt."
+
+#: Api/routes/auth-routes.php:114
+msgid "Token expiré."
+msgstr "Token verlopen."
+
+#: Api/routes/auth-routes.php:147
+msgid "Token invalide ou corrompu."
+msgstr "Token ongeldig of beschadigd."
+
+#: Api/routes/ninja-routes.php:23
+msgid "Aucune clé API Invoice Ninja configurée pour cet utilisateur."
+msgstr "Geen Invoice Ninja API-sleutel geconfigureerd voor deze gebruiker."
+
+#: Api/routes/ninja-routes.php:29
+msgid "Erreur de déchiffrement de la clé."
+msgstr "Fout bij ontsleutelen van de sleutel."
+
+#: Api/routes/ninja-routes.php:109,125
+msgid "Token manquant"
+msgstr "Token ontbreekt"
+
+#: Api/routes/ninja-routes.php:125
+msgid "Impossible de lire les données actuelles."
+msgstr "Kan huidige gegevens niet lezen."
+
+#: Api/routes/clients-routes.php:104
+msgid "Token manquant"
+msgstr "Token ontbreekt"
+
+#: Api/routes/documents-routes.php:31
+msgid "Token manquant"
+msgstr ""
+
+#: Api/routes/utils-routes.php:26
+msgid "Token requis pour charger les listes."
+msgstr "Token vereist om lijsten te laden."
+
+#: Api/routes/ia-routes.php:15
+msgid "Configuration Groq manquante."
+msgstr "Ontbrekende Groq-configuratie."
+
+#: Api/routes/ia-routes.php:67
+msgid "Erreur IA Applicompta : %s"
+msgstr "Applicompta AI-fout: %s"
+
+#: Api/routes/ia-routes.php:68
+msgid "Erreur : %s"
+msgstr "Fout: %s"
+
+#: Api/routes/expenses-routes.php:23
+msgid "Image manquante"
+msgstr "Afbeelding ontbreekt"
+
+#: Api/routes/expenses-routes.php:91
+msgid "Erreur Vision Groq : %s"
+msgstr "Vision Groq-fout: %s"
+
+#: Api/routes/documents-routes.php:86
+msgid "Client obligatoire"
+msgstr "Klant verplicht"
+
+#: Api/routes/documents-routes.php:132
+msgid "Inconnue"
+msgstr "Onbekend"
+
+#: Api/routes/documents-routes.php:133
+msgid "Erreur sauvegarde : %s"
+msgstr "Opslaan fout: %s"
+
+#: Api/routes/documents-routes.php:194
+msgid "Devis introuvable"
+msgstr "Offerte niet gevonden"
+
+#: Api/routes/documents-routes.php:223
+msgid "Le client n'a aucune adresse email valide."
+msgstr "De klant heeft geen geldig e-mailadres."
+
+#: Api/routes/documents-routes.php:246
+msgid "Accepter et Signer en ligne"
+msgstr "Accepteer en teken online"
+
+#: Api/routes/documents-routes.php:267
+msgid "Erreur Gotenberg"
+msgstr "Gotenberg-fout"
+
+#: Api/routes/documents-routes.php:301
+msgid "Gotenberg Connection Error: %s"
+msgstr "Gotenberg verbindingsfout: %s"
+
+#: Api/routes/documents-routes.php:309
+msgid "Gotenberg Error (%d): %s"
+msgstr "Gotenberg-fout (%d): %s"
+
+#: Api/routes/documents-routes.php:323
+msgid "Configuration SMTP incomplète dans votre profil."
+msgstr "SMTP-configuratie onvolledig in uw profiel."
+
+#: Api/routes/documents-routes.php:376
+msgid "Email envoyé avec succès à %s"
+msgstr "E-mail succesvol verzonden naar %s"
+
+#: Api/routes/documents-routes.php:379
+msgid "Détail Erreur SMTP : %s"
+msgstr "SMTP-foutdetails: %s"
+
+#: Api/routes/documents-routes.php:380
+msgid "Erreur d'authentification : %s"
+msgstr "Authenticatiefout: %s"
+
+#: Api/routes/documents-routes.php:459
+msgid "Données manquantes"
+msgstr "Ontbrekende gegevens"
+
+#: Api/routes/documents-routes.php:465
+msgid "Lien expiré."
+msgstr "Link verlopen."
+
+#: Api/routes/documents-routes.php:506
+msgid "Devis signé ! (ID: %s)"
+msgstr "Offerte ondertekend! (ID: %s)"
+
+#: Api/routes/documents-routes.php:511
+msgid "Erreur mail confirmation signature: %s"
+msgstr "Fout bij e-mail bevestiging handtekening: %s"
+
+#: Api/routes/documents-routes.php:529
+msgid "Signature électronique introuvable pour ce devis."
+msgstr "Elektronische handtekening niet gevonden voor deze offerte."

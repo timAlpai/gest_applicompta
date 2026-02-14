@@ -1,0 +1,206 @@
+# Translation file for gest_applicompta plugin
+# Copyright (C) 2026 T&G Consulting
+# This file is distributed under the same license as the gest_applicompta package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gest_applicompta 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-12 00:00+0000\n"
+"PO-Revision-Date: 2026-02-12 00:00+0000\n"
+"Last-Translator: Auto-generated <dev@local>\n"
+"Language-Team: Romanian\n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Poedit-Basepath: .\n"
+
+#: gestion-applicompta.php:54
+msgid "🚀 [APPLICOMPTA] Le plugin principal est chargé !"
+msgstr "🚀 [APPLICOMPTA] Pluginul principal a fost încărcat!"
+
+#: gestion-applicompta.php:82
+msgid "Connexion PWA Applicompta"
+msgstr "Conexiune PWA Applicompta"
+
+#: gestion-applicompta.php:85
+msgid "Code d'accès PWA"
+msgstr "Cod de acces PWA"
+
+#: gestion-applicompta.php:87
+msgid "Définir un nouveau code ici"
+msgstr "Setați un cod nou aici"
+
+#: gestion-applicompta.php:88
+msgid "Utilisez ce code spécifique pour vous connecter à l'application mobile. (Laissez vide pour ne pas changer)"
+msgstr "Folosiți acest cod specific pentru a vă conecta la aplicația mobilă. (Lăsați gol pentru a nu schimba)"
+
+#: gestion-applicompta.php:133
+msgid "Intégration Invoice Ninja v5"
+msgstr "Integrare Invoice Ninja v5"
+
+#: gestion-applicompta.php:136
+msgid "Clé API (Token)"
+msgstr "Cheie API (Token)"
+
+#: gestion-applicompta.php:139
+msgid "La clé sera chiffrée en base de données."
+msgstr "Cheia va fi criptată în baza de date."
+
+#: Api/rest-routes.php:3
+msgid "🚀 [APPLICOMPTA] Le rest-routes est chargé !"
+msgstr "🚀 [APPLICOMPTA] rest-routes a fost încărcat!"
+
+#: Api/rest-routes.php:30
+msgid "Hello World! Le plugin est bien connecté."
+msgstr "Salut lume! Pluginul este conectat corect."
+
+#: Api/routes/auth-routes.php:19
+msgid "Identifiants manquants."
+msgstr "Date de autentificare lipsă."
+
+#: Api/routes/auth-routes.php:26
+msgid "Utilisateur introuvable."
+msgstr "Utilizatorul nu a fost găsit."
+
+#: Api/routes/auth-routes.php:51
+msgid "Mot de passe incorrect."
+msgstr "Parolă incorectă."
+
+#: Api/routes/auth-routes.php:74
+msgid "Erreur technique."
+msgstr "Eroare tehnică."
+
+#: Api/routes/auth-routes.php:97
+msgid "Token manquant."
+msgstr "Token lipsă."
+
+#: Api/routes/auth-routes.php:114
+msgid "Token expiré."
+msgstr "Token expirat."
+
+#: Api/routes/auth-routes.php:147
+msgid "Token invalide ou corrompu."
+msgstr "Token invalid sau corupt."
+
+#: Api/routes/ninja-routes.php:23
+msgid "Aucune clé API Invoice Ninja configurée pour cet utilisateur."
+msgstr "Nici o cheie API Invoice Ninja configurată pentru acest utilizator."
+
+#: Api/routes/ninja-routes.php:29
+msgid "Erreur de déchiffrement de la clé."
+msgstr "Eroare la decriptarea cheii."
+
+#: Api/routes/ninja-routes.php:109,125
+msgid "Token manquant"
+msgstr "Token lipsă"
+
+#: Api/routes/ninja-routes.php:125
+msgid "Impossible de lire les données actuelles."
+msgstr "Nu se pot citi datele curente."
+
+#: Api/routes/clients-routes.php:104
+msgid "Token manquant"
+msgstr "Token lipsă"
+
+#: Api/routes/documents-routes.php:31
+msgid "Token manquant"
+msgstr ""
+
+#: Api/routes/utils-routes.php:26
+msgid "Token requis pour charger les listes."
+msgstr "Token necesar pentru a încărca listele."
+
+#: Api/routes/ia-routes.php:15
+msgid "Configuration Groq manquante."
+msgstr "Configurație Groq lipsă."
+
+#: Api/routes/ia-routes.php:67
+msgid "Erreur IA Applicompta : %s"
+msgstr "Eroare IA Applicompta: %s"
+
+#: Api/routes/ia-routes.php:68
+msgid "Erreur : %s"
+msgstr "Eroare: %s"
+
+#: Api/routes/expenses-routes.php:23
+msgid "Image manquante"
+msgstr "Imagine lipsă"
+
+#: Api/routes/expenses-routes.php:91
+msgid "Erreur Vision Groq : %s"
+msgstr "Eroare Vision Groq: %s"
+
+#: Api/routes/documents-routes.php:86
+msgid "Client obligatoire"
+msgstr "Client obligatoriu"
+
+#: Api/routes/documents-routes.php:132
+msgid "Inconnue"
+msgstr "Necunoscut"
+
+#: Api/routes/documents-routes.php:133
+msgid "Erreur sauvegarde : %s"
+msgstr "Eroare salvare: %s"
+
+#: Api/routes/documents-routes.php:194
+msgid "Devis introuvable"
+msgstr "Devizul nu a fost găsit"
+
+#: Api/routes/documents-routes.php:223
+msgid "Le client n'a aucune adresse email valide."
+msgstr "Clientul nu are o adresă de e-mail validă."
+
+#: Api/routes/documents-routes.php:246
+msgid "Accepter et Signer en ligne"
+msgstr "Acceptați și semnați online"
+
+#: Api/routes/documents-routes.php:267
+msgid "Erreur Gotenberg"
+msgstr "Eroare Gotenberg"
+
+#: Api/routes/documents-routes.php:301
+msgid "Gotenberg Connection Error: %s"
+msgstr "Eroare de conectare Gotenberg: %s"
+
+#: Api/routes/documents-routes.php:309
+msgid "Gotenberg Error (%d): %s"
+msgstr "Eroare Gotenberg (%d): %s"
+
+#: Api/routes/documents-routes.php:323
+msgid "Configuration SMTP incomplète dans votre profil."
+msgstr "Configurare SMTP incompletă în profilul dvs."
+
+#: Api/routes/documents-routes.php:376
+msgid "Email envoyé avec succès à %s"
+msgstr "E-mail trimis cu succes la %s"
+
+#: Api/routes/documents-routes.php:379
+msgid "Détail Erreur SMTP : %s"
+msgstr "Detaliu eroare SMTP: %s"
+
+#: Api/routes/documents-routes.php:380
+msgid "Erreur d'authentification : %s"
+msgstr "Eroare de autentificare: %s"
+
+#: Api/routes/documents-routes.php:459
+msgid "Données manquantes"
+msgstr "Date lipsă"
+
+#: Api/routes/documents-routes.php:465
+msgid "Lien expiré."
+msgstr "Link expirat."
+
+#: Api/routes/documents-routes.php:506
+msgid "Devis signé ! (ID: %s)"
+msgstr "Deviz semnat! (ID: %s)"
+
+#: Api/routes/documents-routes.php:511
+msgid "Erreur mail confirmation signature: %s"
+msgstr "Eroare la e-mailul de confirmare a semnăturii: %s"
+
+#: Api/routes/documents-routes.php:529
+msgid "Signature électronique introuvable pour ce devis."
+msgstr "Semnătură electronică nereușită pentru acest deviz."
