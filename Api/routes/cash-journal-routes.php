@@ -1,7 +1,7 @@
 <?php
 defined('ABSPATH') || exit;
 
-add_action('rest_api_init', function() {
+
     $namespace = 'applicompta/v1';
     
     // On utilise obligatoirement applicompta_check_jwt_permission 
@@ -25,7 +25,7 @@ add_action('rest_api_init', function() {
         'callback' => 'applicompta_close_cash_journal',
         'permission_callback' => $auth_callback
     ]);
-});
+
 
 
 function applicompta_get_cash_journal($request) {
@@ -45,27 +45,7 @@ function applicompta_get_cash_journal($request) {
     ]);
 }
 
-/**
- * Permission callback for REST routes: verify WP nonce and capability.
- */
-function applicompta_check_jwt_permission($request = null) {
-    // Verify nonce from X-WP-Nonce header when available
-    $nonce = '';
-    if (!empty($_SERVER['HTTP_X_WP_NONCE'])) {
-        $nonce = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_WP_NONCE']));
-    } elseif ($request && $request->get_header('x_wp_nonce')) {
-        $nonce = sanitize_text_field(wp_unslash($request->get_header('x_wp_nonce')));
-    }
 
-    if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
-        return false;
-    }
-
-    // Require administrative capability for cash journal operations
-    if (current_user_can('manage_options')) return true;
-
-    return false;
-}
 
 function applicompta_create_cash_entry($request) {
     global $wpdb;

@@ -1,6 +1,5 @@
 <?php
 defined('ABSPATH') || exit;
-error_log( __('🚀 [APPLICOMPTA] Le rest-routes est chargé !', 'applicompta') );
 
 /**
  * Enregistrement des routes API lors de l'initialisation REST de WordPress

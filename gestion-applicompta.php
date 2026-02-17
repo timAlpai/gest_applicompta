@@ -7,7 +7,6 @@
  * Author: T&G Consulting
  * Author URI: 
  */
-error_reporting(E_ALL); ini_set('display_errors', 1);
 if ( ! defined( 'ABSPATH' ) ) {
     // Sortie si accès direct
     exit; 
@@ -24,45 +23,41 @@ add_action('init', 'applicompta_load_textdomain');
  */
 add_action('rest_api_init', function() {
     
-    // 1. GESTION DU CORS (Indispensable pour portal.applicompta.be)
-    remove_filter('rest_pre_serve_request', 'rest_send_cors_headers');
-    
-    add_filter('rest_pre_serve_request', function($value) {
-        header('Access-Control-Allow-Origin: https://portal.applicompta.be');
-        header('Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE');
-        header('Access-Control-Allow-Credentials: true');
-        header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Accept-Language, X-App-Lang');
-        
-        // Si c'est une requête de vérification (OPTIONS), on arrête WP et on renvoie les headers
-        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            status_header(200);
-            exit;
-        }
-        
-        return $value;
-    });
+    // Gérer les requêtes de pré-vérification (OPTIONS) immédiatement
+    if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        header("Access-Control-Allow-Origin: https://portal.applicompta.be");
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+        header("Access-Control-Allow-Credentials: true");
+        header("Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Accept-Language, X-App-Lang");
+        status_header(204);
+        exit;
+    }
 
-    // 2. GESTION DE LA LANGUE (Version robuste sans getallheaders)
-    $lang_header = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'fr';
-    $lang = substr($lang_header, 0, 2); // On prend "fr" ou "en"
-
+    // Détection de la langue
+    $accept_lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'fr';
+    $lang = substr($accept_lang, 0, 2);
     $locales = [
-        'fr' => 'fr_FR',
-        'en' => 'en_US',
-        'nl' => 'nl_NL',
-        'es' => 'es_ES',
-        'pl' => 'pl_PL',
-        'pt' => 'pt_PT',
-        'tr' => 'tr_TR',
-        'ro' => 'ro_RO',
+        'fr' => 'fr_FR', 'en' => 'en_US', 'nl' => 'nl_NL', 'es' => 'es_ES',
+        'pl' => 'pl_PL', 'pt' => 'pt_PT', 'tr' => 'tr_TR', 'ro' => 'ro_RO'
     ];
-
-    $locale = isset($locales[$lang]) ? $locales[$lang] : 'fr_FR';
+    $locale = $locales[$lang] ?? 'fr_FR';
     
     unload_textdomain('applicompta');
     switch_to_locale($locale);
-    
-}, 5);
+    load_plugin_textdomain('applicompta', false, dirname(plugin_basename(__FILE__)) . '/languages');
+
+}, 0);
+
+/**
+ * Filtre de secours pour forcer le CORS sur TOUTES les réponses REST (même en cas de succès 200)
+ */
+add_filter('rest_pre_serve_request', function($value) {
+    header("Access-Control-Allow-Origin: https://portal.applicompta.be");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+    header("Access-Control-Allow-Credentials: true");
+    header("Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce, Accept-Language, X-App-Lang");
+    return $value;
+});
 // 1. Chargement de l'autoloader Composer (pour JWT)
 if (file_exists(__DIR__ . '/vendor/autoload.php')) {
     require_once __DIR__ . '/vendor/autoload.php';
