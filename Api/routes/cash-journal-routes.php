@@ -3,37 +3,30 @@ defined('ABSPATH') || exit;
 
 add_action('rest_api_init', function() {
     $namespace = 'applicompta/v1';
+    
+    // On utilise obligatoirement applicompta_check_jwt_permission 
+    // qui est déjà définie dans ninja-routes.php
+    $auth_callback = 'applicompta_check_jwt_permission';
+
     register_rest_route($namespace, '/cash-journal', [
         'methods' => 'GET',
         'callback' => 'applicompta_get_cash_journal',
-        'permission_callback' => 'applicompta_rest_permission'
+        'permission_callback' => $auth_callback
     ]);
 
     register_rest_route($namespace, '/cash-journal/entries', [
         'methods' => 'POST',
         'callback' => 'applicompta_create_cash_entry',
-        'permission_callback' => 'applicompta_rest_permission'
-    ]);
-
-    register_rest_route($namespace, '/cash-journal/entries/(?P<id>\d+)', [
-        'methods' => ['PUT','PATCH'],
-        'callback' => 'applicompta_update_cash_entry',
-        'permission_callback' => 'applicompta_rest_permission'
-    ]);
-
-    register_rest_route($namespace, '/cash-journal/entries/(?P<id>\d+)', [
-        'methods' => 'DELETE',
-        'callback' => 'applicompta_delete_cash_entry',
-        'permission_callback' => 'applicompta_rest_permission'
+        'permission_callback' => $auth_callback
     ]);
 
     register_rest_route($namespace, '/cash-journal/close', [
         'methods' => 'POST',
         'callback' => 'applicompta_close_cash_journal',
-        'permission_callback' => 'applicompta_rest_permission'
+        'permission_callback' => $auth_callback
     ]);
-
 });
+
 
 function applicompta_get_cash_journal($request) {
     global $wpdb;
@@ -55,7 +48,7 @@ function applicompta_get_cash_journal($request) {
 /**
  * Permission callback for REST routes: verify WP nonce and capability.
  */
-function applicompta_rest_permission($request = null) {
+function applicompta_check_jwt_permission($request = null) {
     // Verify nonce from X-WP-Nonce header when available
     $nonce = '';
     if (!empty($_SERVER['HTTP_X_WP_NONCE'])) {
