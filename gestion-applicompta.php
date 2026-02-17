@@ -78,6 +78,61 @@ define('APPLICOMPTA_VERSION', '1.0.0');
 define('APPLICOMPTA_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('APPLICOMPTA_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+/**
+ * Create DB tables for cash journal on plugin activation
+ */
+function applicompta_install_cash_journal() {
+    global $wpdb;
+    $charset_collate = $wpdb->get_charset_collate();
+    $table_journal = $wpdb->prefix . 'gest_cash_journal';
+    $table_entries = $wpdb->prefix . 'gest_cash_entries';
+
+    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+    $sql = "CREATE TABLE $table_journal (\n" .
+           " id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,\n" .
+           " date DATE NOT NULL,\n" .
+           " opening_balance DECIMAL(20,2) DEFAULT 0.00,\n" .
+           " closing_balance DECIMAL(20,2) DEFAULT 0.00,\n" .
+           " total_in DECIMAL(20,2) DEFAULT 0.00,\n" .
+           " total_out DECIMAL(20,2) DEFAULT 0.00,\n" .
+           " is_closed TINYINT(1) DEFAULT 0,\n" .
+           " created_by BIGINT(20) DEFAULT 0,\n" .
+           " created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n" .
+           " updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" .
+           " PRIMARY KEY  (id),\n" .
+           " UNIQUE KEY date_unique (date)\n" .
+           ") $charset_collate;";
+
+    dbDelta($sql);
+
+    $sql2 = "CREATE TABLE $table_entries (\n" .
+            " id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,\n" .
+            " journal_id BIGINT(20) UNSIGNED DEFAULT NULL,\n" .
+            " uuid VARCHAR(100) DEFAULT NULL,\n" .
+            " datetime DATETIME NOT NULL,\n" .
+            " type VARCHAR(10) NOT NULL,\n" .
+            " amount DECIMAL(20,2) NOT NULL,\n" .
+            " currency VARCHAR(10) DEFAULT 'EUR',\n" .
+            " vat_rate DECIMAL(5,2) DEFAULT 0.00,\n" .
+            " category VARCHAR(100) DEFAULT NULL,\n" .
+            " payment_method VARCHAR(50) DEFAULT NULL,\n" .
+            " description TEXT,\n" .
+            " receipt_url TEXT,\n" .
+            " source VARCHAR(20) DEFAULT 'pwa',\n" .
+            " created_by BIGINT(20) DEFAULT 0,\n" .
+            " created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n" .
+            " synced TINYINT(1) DEFAULT 0,\n" .
+            " PRIMARY KEY  (id),\n" .
+            " KEY journal_idx (journal_id),\n" .
+            " KEY uuid_idx (uuid)\n" .
+            ") $charset_collate;";
+
+    dbDelta($sql2);
+}
+
+register_activation_hook(__FILE__, 'applicompta_install_cash_journal');
+
 // 3. Initialisation de l'API REST
 require_once APPLICOMPTA_PLUGIN_DIR . 'Api/rest-routes.php';
 
