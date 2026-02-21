@@ -25,23 +25,48 @@ defined('ABSPATH') || exit;
         'callback' => 'applicompta_close_cash_journal',
         'permission_callback' => $auth_callback
     ]);
-
-
+    
+    register_rest_route($namespace, '/cash-journal/entries/(?P<id>\d+)', [
+        'methods' => 'DELETE',
+        'callback' => 'applicompta_delete_cash_entry',
+        'permission_callback' => $auth_callback
+    ]);
 
 function applicompta_get_cash_journal($request) {
     global $wpdb;
+    
+    // 1. Récupérer les paramètres
     $date = $request->get_param('date') ?: date('Y-m-d');
+    $user_id = get_current_user_id(); // Très important pour le multi-tenant
+    
+    // 2. Définir les noms de tables
     $table_journal = $wpdb->prefix . 'gest_cash_journal';
     $table_entries = $wpdb->prefix . 'gest_cash_entries';
 
-    $journal = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE date = %s", $date));
-    $entries = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table_entries WHERE DATE(datetime) = %s ORDER BY datetime ASC", $date));
+    // 3. Récupérer le résumé du journal (L'en-tête bleu)
+    $journal = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table_journal WHERE date = %s AND created_by = %d", 
+        $date, $user_id
+    ));
 
+    // 4. Récupérer les entrées (La liste) avec la correction pour le bouton annuler
+    // On s'assure de filtrer par date ET par utilisateur
+    $entries = $wpdb->get_results($wpdb->prepare(
+        "SELECT e.*, 
+        (SELECT COUNT(*) FROM $table_entries WHERE parent_id = e.id AND status = 'storno') as is_already_cancelled
+        FROM $table_entries e 
+        WHERE DATE(e.datetime) = %s 
+        AND e.created_by = %d 
+        ORDER BY e.datetime ASC", 
+        $date, $user_id
+    ));
+
+    // 5. Retourner la réponse
     return rest_ensure_response([
         'success' => true,
-        'date' => $date,
+        'date'    => $date,
         'journal' => $journal,
-        'entries' => $entries
+        'entries' => $entries ? $entries : [] // Retourne un tableau vide si rien n'est trouvé
     ]);
 }
 
@@ -51,7 +76,10 @@ function applicompta_create_cash_entry($request) {
     global $wpdb;
     $data = json_decode($request->get_body(), true);
     $table_entries = $wpdb->prefix . 'gest_cash_entries';
-
+    $datetime = date('Y-m-d H:i:s', strtotime($data['datetime']));
+    $date_only = date('Y-m-d', strtotime($datetime));
+    $table_journal = $wpdb->prefix . 'gest_cash_journal';
+    $user_id = get_current_user_id();
     // Basic validation
     if (empty($data['datetime']) || empty($data['type']) || !isset($data['amount'])) {
         return new WP_Error('invalid_data', 'Missing required fields', ['status' => 400]);
@@ -66,6 +94,28 @@ function applicompta_create_cash_entry($request) {
     if (!is_numeric($data['amount']) || $amount <= 0) return new WP_Error('invalid_amount', 'Invalid amount', ['status' => 400]);
 
     // Prevent creating entries for closed journals
+       // --- 1. TROUVER OU CRÉER LE JOURNAL POUR CETTE DATE ---
+    $journal = $wpdb->get_row($wpdb->prepare(
+        "SELECT id, is_closed FROM $table_journal WHERE date = %s AND created_by = %d",
+        $date_only, $user_id
+    ));
+
+    if ($journal && $journal->is_closed) {
+        return new WP_Error('journal_closed', 'Le journal de cette date est clôturé.', ['status' => 403]);
+    }
+
+    if (!$journal) {
+        // Création automatique du journal s'il n'existe pas
+        $wpdb->insert($table_journal, [
+            'date' => $date_only,
+            'created_by' => get_current_user_id(),
+            'opening_balance' => 0, // Idéalement, récupérer le closing de la veille
+            'created_at' => current_time('mysql')
+        ]);
+        $journal_id = $wpdb->insert_id;
+    } else {
+        $journal_id = $journal->id;
+    }
     $entry_date = date('Y-m-d', $dt);
     $table_journal = $wpdb->prefix . 'gest_cash_journal';
     $existing_j = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE date = %s", $entry_date));
@@ -73,8 +123,27 @@ function applicompta_create_cash_entry($request) {
         return new WP_Error('journal_closed', 'Journal is closed for this date', ['status' => 403]);
     }
 
-    $inserted = $wpdb->insert($table_entries, [
-        'journal_id' => $data['journal_id'] ?? null,
+ 
+
+    
+    //debut
+    // 1. Récupérer le row_hash de la dernière entrée insérée (peu importe la date)
+$last_entry = $wpdb->get_row("SELECT row_hash FROM $table_entries ORDER BY id DESC LIMIT 1");
+$prev_hash = $last_entry ? $last_entry->row_hash : '0000000000000000000000000000000000000000000000000000000000000000';
+
+// 2. Préparer les données pour le hash (tous les champs critiques)
+$data_to_hash = $prev_hash . 
+                $data['datetime'] . 
+                $type . 
+                $amount . 
+                $data['description'];
+
+// 3. Calculer le hash SHA-256
+$row_hash = hash('sha256', $data_to_hash);
+
+// 4. Ajouter au tableau d'insertion
+$insert_data = [
+    'journal_id' => $journal_id,
         'uuid' => sanitize_text_field($data['uuid'] ?? ''),
         'datetime' => date('Y-m-d H:i:s', $dt),
         'type' => $type,
@@ -87,12 +156,18 @@ function applicompta_create_cash_entry($request) {
         'receipt_url' => sanitize_text_field($data['receipt_url'] ?? ''),
         'source' => sanitize_text_field($data['source'] ?? 'pwa'),
         'created_by' => get_current_user_id(),
-        'synced' => 1
-    ]);
-
-    if ($inserted === false) {
+        'created_at' => current_time('mysql'), 
+        'synced' => 1,
+        'prev_hash' => $prev_hash,
+        'row_hash'  => $row_hash,
+        'status'    => 'active'
+];
+            
+$inserted = $wpdb->insert($table_entries, $insert_data);
+if ($inserted === false) {
         return new WP_Error('db_error', 'DB insert failed', ['status' => 500]);
     }
+    //fin
 
     $id = $wpdb->insert_id;
     $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_entries WHERE id = %d", $id));
@@ -100,7 +175,7 @@ function applicompta_create_cash_entry($request) {
     // Recalculate journal totals for the entry date
     $entry_date = date('Y-m-d', strtotime($data['datetime']));
     $journal = applicompta_recalc_journal($entry_date);
-
+    applicompta_audit_log('CREATE_ENTRY', 'CASH_ENTRY', $wpdb->insert_id, "Nouvelle entrée de " . $amount . "€");
     return rest_ensure_response([ 'success' => true, 'entry' => $entry, 'journal' => $journal ]);
 }
 
@@ -147,28 +222,79 @@ function applicompta_update_cash_entry($request) {
 
 function applicompta_delete_cash_entry($request) {
     global $wpdb;
-    $id = intval($request['id']);
+    $user_id = get_current_user_id();
+    $id_to_cancel = intval($request['id']);
     $table_entries = $wpdb->prefix . 'gest_cash_entries';
+    $uuid = sanitize_text_field($request->get_param('uuid') ?? '');
 
-    // fetch entry to determine date before deleting
-    $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_entries WHERE id = %d", $id));
-    if (!$entry) return new WP_Error('not_found', 'Entry not found', ['status' => 404]);
+    // 1. Vérifier si cette ligne n'a pas DÉJÀ été annulée par une autre ligne
+    $already_cancelled = $wpdb->get_var($wpdb->prepare(
+        "SELECT id FROM $table_entries WHERE parent_id = %d AND status = 'storno'", 
+        $id_to_cancel
+    ));
 
-    // Prevent deleting if journal is closed for that date
+    if ($already_cancelled) {
+        return new WP_Error('already_storno', 'Cette opération a déjà été annulée.', ['status' => 400]);
+    }
+    if (!empty($uuid)) {
+        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table_entries WHERE uuid = %s", $uuid));
+        if ($exists) return rest_ensure_response(['success' => true, 'message' => 'Déjà traité']);
+    }
+    // 1. Récupérer l'entrée originale
+    $original = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table_entries WHERE id = %d AND created_by = %d", 
+        $id_to_cancel, $user_id
+    ));
+
+    if (!$original) return new WP_Error('not_found', 'Entrée introuvable');
+
+    // 2. Vérifier si le journal n'est pas déjà clôturé
     $table_journal = $wpdb->prefix . 'gest_cash_journal';
-    $entry_date = date('Y-m-d', strtotime($entry->datetime));
-    $existing_j = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE date = %s", $entry_date));
-    if ($existing_j && intval($existing_j->is_closed) === 1) {
-        return new WP_Error('journal_closed', 'Journal is closed for this date', ['status' => 403]);
+    $entry_date = date('Y-m-d', strtotime($original->datetime));
+    $journal = $wpdb->get_row($wpdb->prepare("SELECT is_closed FROM $table_journal WHERE date = %s", $entry_date));
+    
+    if ($journal && $journal->is_closed) {
+        return new WP_Error('closed', 'Journal clôturé, annulation impossible');
     }
 
-    $res = $wpdb->delete($table_entries, [ 'id' => $id ]);
-    if ($res === false) return new WP_Error('db_error', 'Delete failed', ['status' => 500]);
+    // 3. RÉCUPÉRER LE DERNIER HASH pour la chaîne (Multi-tenant)
+    $last_entry = $wpdb->get_row($wpdb->prepare(
+        "SELECT row_hash FROM $table_entries WHERE created_by = %d ORDER BY id DESC LIMIT 1", 
+        $user_id
+    ));
+    $prev_hash = $last_entry ? $last_entry->row_hash : str_repeat('0', 64);
 
-    // Recalculate journal totals for that date
-    $journal = applicompta_recalc_journal($entry_date);
+    // 4. CRÉER LA LIGNE DE STORNO (Annulation)
+    $storno_amount = $original->amount * -1; // On inverse le montant
+    $storno_desc = "ANNULATION (ID: " . $original->id . ") " . $original->description;
+    $storno_datetime = current_time('mysql');
+    
+    // Calcul du nouveau hash pour cette nouvelle ligne
+    $data_to_hash = $prev_hash . $user_id . $storno_datetime . $original->type . $storno_amount . $storno_desc;
+    $row_hash = hash('sha256', $data_to_hash);
 
-    return rest_ensure_response([ 'success' => true, 'deleted' => $res, 'journal' => $journal ]);
+    $wpdb->insert($table_entries, [
+        'journal_id'     => $original->journal_id,
+        'datetime'       => $storno_datetime,
+        'uuid'           => $uuid,  
+        'type'           => $original->type, // On garde le même type (in ou out)
+        'amount'         => $storno_amount,  // Mais montant négatif
+        'description'    => $storno_desc,
+        'created_by'     => $user_id,
+        'created_at'     => current_time('mysql'), 
+        'payment_method' => $original->payment_method,
+        'status'         => 'storno',       // Nouveau statut pour info visuelle
+        'prev_hash'      => $prev_hash,
+        'row_hash'       => $row_hash,
+        'parent_id'      => $original->id,
+        'source'         => 'pwa',
+        'synced'         => 1
+    ]);
+
+    // 5. Recalculer les totaux (le montant négatif fera le job tout seul)
+    applicompta_recalc_journal($entry_date);
+    applicompta_audit_log('CANCEL_ENTRY', 'CASH_ENTRY', $id_to_cancel, "Annulation via ligne ID " . $wpdb->insert_id);
+    return rest_ensure_response(['success' => true, 'message' => 'Contre-passation effectuée']);
 }
 
 /**
@@ -176,12 +302,22 @@ function applicompta_delete_cash_entry($request) {
  */
 function applicompta_recalc_journal($date) {
     global $wpdb;
+     $user_id = get_current_user_id(); 
     $table_journal = $wpdb->prefix . 'gest_cash_journal';
     $table_entries = $wpdb->prefix . 'gest_cash_entries';
 
-    $tot_in = floatval($wpdb->get_var($wpdb->prepare("SELECT SUM(amount) FROM $table_entries WHERE DATE(datetime) = %s AND type = %s", $date, 'in')) ?: 0);
-    $tot_out = floatval($wpdb->get_var($wpdb->prepare("SELECT SUM(amount) FROM $table_entries WHERE DATE(datetime) = %s AND type = %s", $date, 'out')) ?: 0);
+    // Somme des entrées ACTIVES uniquement
+    $tot_in = floatval($wpdb->get_var($wpdb->prepare(
+        "SELECT SUM(amount) FROM $table_entries 
+         WHERE DATE(datetime) = %s AND type = %s AND created_by = %d AND status IN ('active', 'storno')", 
+        $date, 'in', $user_id
+    )) ?: 0);
 
+    $tot_out = floatval($wpdb->get_var($wpdb->prepare(
+        "SELECT SUM(amount) FROM $table_entries 
+         WHERE DATE(datetime) = %s AND type = %s AND created_by = %d AND status IN ('active', 'storno')", 
+        $date, 'out', $user_id
+    )) ?: 0);
     $journal = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE date = %s", $date));
     if ($journal) {
         $opening = floatval($journal->opening_balance ?: 0);
@@ -224,5 +360,19 @@ function applicompta_close_cash_journal($request) {
     if ($res === false) return new WP_Error('db_error', 'Failed to close journal', ['status' => 500]);
 
     $journal = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE id = %d", $journal->id));
+    applicompta_audit_log('CLOSE_JOURNAL', 'JOURNAL', $journal->id, "Clôture de la journée " . $date);
     return rest_ensure_response([ 'success' => true, 'journal' => $journal ]);
+}
+
+function applicompta_audit_log($action, $object_type, $object_id, $details = '') {
+    global $wpdb;
+    $wpdb->insert($wpdb->prefix . 'gest_audit_log', [
+        'user_id'     => get_current_user_id(),
+        'action'      => $action,
+        'object_type' => $object_type,
+        'object_id'   => $object_id,
+        'details'     => is_array($details) ? json_encode($details) : $details,
+        'ip_address'  => $_SERVER['REMOTE_ADDR'],
+        'created_at' => current_time('mysql')
+    ]);
 }

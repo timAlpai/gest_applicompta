@@ -95,6 +95,7 @@ function applicompta_install_cash_journal() {
            " created_by BIGINT(20) DEFAULT 0,\n" .
            " created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n" .
            " updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" .
+           
            " PRIMARY KEY  (id),\n" .
            " UNIQUE KEY date_unique (date)\n" .
            ") $charset_collate;";
@@ -104,6 +105,7 @@ function applicompta_install_cash_journal() {
     $sql2 = "CREATE TABLE $table_entries (\n" .
             " id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,\n" .
             " journal_id BIGINT(20) UNSIGNED DEFAULT NULL,\n" .
+            " parent_id BIGINT(20) UNSIGNED DEFAULT NULL,\n" .
             " uuid VARCHAR(100) DEFAULT NULL,\n" .
             " datetime DATETIME NOT NULL,\n" .
             " type VARCHAR(10) NOT NULL,\n" .
@@ -118,12 +120,33 @@ function applicompta_install_cash_journal() {
             " created_by BIGINT(20) DEFAULT 0,\n" .
             " created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n" .
             " synced TINYINT(1) DEFAULT 0,\n" .
+            " status VARCHAR(20) DEFAULT 'active',\n" .
+            " row_hash VARCHAR(64) DEFAULT NULL,\n" .
+            " prev_hash VARCHAR(64) DEFAULT NULL,\n" .
             " PRIMARY KEY  (id),\n" .
             " KEY journal_idx (journal_id),\n" .
             " KEY uuid_idx (uuid)\n" .
             ") $charset_collate;";
 
     dbDelta($sql2);
+$table_audit = $wpdb->prefix . 'gest_audit_log';
+
+    $sql3 = "CREATE TABLE $table_audit (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+        user_id BIGINT(20) NOT NULL,
+        action VARCHAR(100) NOT NULL,
+        object_type VARCHAR(50) NOT NULL,
+        object_id BIGINT(20) NOT NULL,
+        details LONGTEXT,
+        ip_address VARCHAR(45) NOT NULL,
+        created_at DATETIME DEFAULT '0000-00-00 00:00:00' NOT NULL,
+        PRIMARY KEY  (id),
+        KEY user_idx (user_id),
+        KEY action_idx (action)
+    ) $charset_collate;";
+
+    dbDelta($sql3);
+    
 }
 
 register_activation_hook(__FILE__, 'applicompta_install_cash_journal');
