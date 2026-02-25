@@ -84,23 +84,25 @@ function applicompta_install_cash_journal() {
 
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-    $sql = "CREATE TABLE $table_journal (\n" .
-           " id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,\n" .
-           " date DATE NOT NULL,\n" .
-           " opening_balance DECIMAL(20,2) DEFAULT 0.00,\n" .
-           " closing_balance DECIMAL(20,2) DEFAULT 0.00,\n" .
-           " total_in DECIMAL(20,2) DEFAULT 0.00,\n" .
-           " total_out DECIMAL(20,2) DEFAULT 0.00,\n" .
-           " is_closed TINYINT(1) DEFAULT 0,\n" .
-           " created_by BIGINT(20) DEFAULT 0,\n" .
-           " created_at DATETIME DEFAULT CURRENT_TIMESTAMP,\n" .
-           " updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n" .
-           
-           " PRIMARY KEY  (id),\n" .
-           " UNIQUE KEY date_unique (date)\n" .
-           ") $charset_collate;";
+    $sql = "CREATE TABLE $table_journal (
+    id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+    date DATE NOT NULL,
+    z_number BIGINT(20) DEFAULT 0,
+    opening_balance DECIMAL(20,2) DEFAULT 0.00,
+    closing_balance DECIMAL(20,2) DEFAULT 0.00,
+    total_in DECIMAL(20,2) DEFAULT 0.00,
+    total_out DECIMAL(20,2) DEFAULT 0.00,
+    is_closed TINYINT(1) DEFAULT 0,
+    fiscal_signature VARCHAR(64) DEFAULT NULL, 
+    prev_z_signature VARCHAR(64) DEFAULT NULL, 
+    created_by BIGINT(20) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY  (id),
+    UNIQUE KEY date_user_unique (date, created_by)
+) $charset_collate;";
 
-    dbDelta($sql);
+dbDelta($sql);
 
     $sql2 = "CREATE TABLE $table_entries (\n" .
             " id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,\n" .

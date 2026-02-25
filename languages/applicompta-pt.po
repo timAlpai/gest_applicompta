@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gest_applicompta 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-12 00:00+0000\n"
+"POT-Creation-Date: 2026-02-25 18:14+0100\n"
 "PO-Revision-Date: 2026-02-12 00:00+0000\n"
 "Last-Translator: Auto-generated <dev@local>\n"
 "Language-Team: Portuguese\n"
@@ -17,51 +17,138 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 "X-Poedit-Basepath: .\n"
 
-#: gestion-applicompta.php:54
-msgid "🚀 [APPLICOMPTA] Le plugin principal est chargé !"
-msgstr "🚀 [APPLICOMPTA] O plugin principal foi carregado!"
+#: Api/routes/cash-journal-routes.php:112
+#, php-format
+msgid ""
+"Vous devez clôturer le journal du %s avant de saisir de nouvelles opérations."
+msgstr ""
 
-#: gestion-applicompta.php:82
-msgid "Connexion PWA Applicompta"
-msgstr "Conexão PWA Applicompta"
+#: Api/routes/ia-routes.php:16
+msgid "Configuration Groq manquante."
+msgstr "Configuração Groq ausente."
 
-#: gestion-applicompta.php:85
-msgid "Code d'accès PWA"
-msgstr "Código de acesso PWA"
+#: Api/routes/ia-routes.php:90
+#, php-format
+msgid "Erreur IA Applicompta : %s"
+msgstr "Erro IA Applicompta: %s"
 
-#: gestion-applicompta.php:87
-msgid "Définir un nouveau code ici"
-msgstr "Defina um novo código aqui"
+#: Api/routes/ia-routes.php:91
+#, php-format
+msgid "Erreur : %s"
+msgstr "Erro: %s"
 
-#: gestion-applicompta.php:88
-msgid "Utilisez ce code spécifique pour vous connecter à l'application mobile. (Laissez vide pour ne pas changer)"
-msgstr "Use este código específico para entrar no aplicativo móvel. (Deixe em branco para não alterar)"
+#: Api/routes/expenses-routes.php:23
+msgid "Image manquante"
+msgstr "Imagem ausente"
 
-#: gestion-applicompta.php:133
-msgid "Intégration Invoice Ninja v5"
-msgstr "Integração Invoice Ninja v5"
+#: Api/routes/expenses-routes.php:91
+#, php-format
+msgid "Erreur Vision Groq : %s"
+msgstr "Erro Vision Groq: %s"
 
-#: gestion-applicompta.php:136
-msgid "Clé API (Token)"
-msgstr "Chave API (Token)"
+#: Api/routes/utils-routes.php:26
+msgid "Token requis pour charger les listes."
+msgstr "Token necessário para carregar as listas."
 
-#: gestion-applicompta.php:139
-msgid "La clé sera chiffrée en base de données."
-msgstr "A chave será criptografada no banco de dados."
+#: Api/routes/clients-routes.php:104 Api/routes/documents-routes.php:31
+#: Api/routes/ninja-routes.php:109
+msgid "Token manquant"
+msgstr "Token ausente"
 
-#: Api/rest-routes.php:3
-msgid "🚀 [APPLICOMPTA] Le rest-routes est chargé !"
-msgstr "🚀 [APPLICOMPTA] rest-routes foi carregado!"
+#: Api/routes/documents-routes.php:86
+msgid "Client obligatoire"
+msgstr "Cliente obrigatório"
 
-#: Api/rest-routes.php:30
-msgid "Hello World! Le plugin est bien connecté."
-msgstr "Olá Mundo! O plugin está bem conectado."
+#: Api/routes/documents-routes.php:132
+msgid "Inconnue"
+msgstr "Desconhecido"
+
+#: Api/routes/documents-routes.php:133
+#, php-format
+msgid "Erreur sauvegarde : %s"
+msgstr "Erro ao salvar: %s"
+
+#: Api/routes/documents-routes.php:194
+msgid "Devis introuvable"
+msgstr "Orçamento não encontrado"
+
+#: Api/routes/documents-routes.php:223
+#, fuzzy
+msgid "Le client n’a aucune adresse email valide."
+msgstr "O cliente não tem um endereço de e-mail válido."
+
+#: Api/routes/documents-routes.php:267
+msgid "Erreur Gotenberg"
+msgstr "Erro Gotenberg"
+
+#: Api/routes/documents-routes.php:301
+#, php-format
+msgid "Gotenberg Connection Error: %s"
+msgstr "Erro de conexão com Gotenberg: %s"
+
+#: Api/routes/documents-routes.php:309
+#, php-format
+msgid "Gotenberg Error (%d): %s"
+msgstr "Erro Gotenberg (%d): %s"
+
+#: Api/routes/documents-routes.php:323
+msgid "Configuration SMTP incomplète dans votre profil."
+msgstr "Configuração SMTP incompleta no seu perfil."
+
+#: Api/routes/documents-routes.php:376
+#, php-format
+msgid "Email envoyé avec succès à %s"
+msgstr "E-mail enviado com sucesso para %s"
+
+#: Api/routes/documents-routes.php:379
+#, php-format
+msgid "Détail Erreur SMTP : %s"
+msgstr "Detalhe do erro SMTP: %s"
+
+#: Api/routes/documents-routes.php:380
+#, php-format
+msgid "Erreur d'authentification : %s"
+msgstr "Erro de autenticação: %s"
+
+#: Api/routes/documents-routes.php:459
+msgid "Données manquantes"
+msgstr "Dados ausentes"
+
+#: Api/routes/documents-routes.php:465
+msgid "Lien expiré."
+msgstr "Link expirado."
+
+#: Api/routes/documents-routes.php:506
+#, php-format
+msgid "Devis signé ! (ID: %s)"
+msgstr "Orçamento assinado! (ID: %s)"
+
+#: Api/routes/documents-routes.php:511
+#, php-format
+msgid "Erreur mail confirmation signature: %s"
+msgstr "Erro no e-mail de confirmação de assinatura: %s"
+
+#: Api/routes/documents-routes.php:529
+msgid "Signature électronique introuvable pour ce devis."
+msgstr "Assinatura eletrônica não encontrada para este orçamento."
+
+#: Api/routes/ninja-routes.php:23
+msgid "Aucune clé API Invoice Ninja configurée pour cet utilisateur."
+msgstr "Nenhuma chave API do Invoice Ninja configurada para este usuário."
+
+#: Api/routes/ninja-routes.php:29
+msgid "Erreur de déchiffrement de la clé."
+msgstr "Erro ao descriptografar a chave."
+
+#: Api/routes/ninja-routes.php:125
+msgid "Impossible de lire les données actuelles."
+msgstr "Não é possível ler os dados atuais."
 
 #: Api/routes/auth-routes.php:19
 msgid "Identifiants manquants."
 msgstr "Credenciais ausentes."
 
-#: Api/routes/auth-routes.php:26
+#: Api/routes/auth-routes.php:26 Api/routes/auth-routes.php:120
 msgid "Utilisateur introuvable."
 msgstr "Usuário não encontrado."
 
@@ -85,116 +172,40 @@ msgstr "Token expirado."
 msgid "Token invalide ou corrompu."
 msgstr "Token inválido ou corrompido."
 
-#: Api/routes/ninja-routes.php:23
-msgid "Aucune clé API Invoice Ninja configurée pour cet utilisateur."
-msgstr "Nenhuma chave API do Invoice Ninja configurada para este usuário."
+#: Api/rest-routes.php:30
+msgid "Hello World! Le plugin est bien connecté."
+msgstr "Olá Mundo! O plugin está bem conectado."
 
-#: Api/routes/ninja-routes.php:29
-msgid "Erreur de déchiffrement de la clé."
-msgstr "Erro ao descriptografar a chave."
+#~ msgid "🚀 [APPLICOMPTA] Le plugin principal est chargé !"
+#~ msgstr "🚀 [APPLICOMPTA] O plugin principal foi carregado!"
 
-#: Api/routes/ninja-routes.php:109,125
-#: Api/routes/clients-routes.php:104
-#: Api/routes/documents-routes.php:31
-msgid "Token manquant"
-msgstr "Token ausente"
+#~ msgid "Connexion PWA Applicompta"
+#~ msgstr "Conexão PWA Applicompta"
 
-#: Api/routes/ninja-routes.php:125
-msgid "Impossible de lire les données actuelles."
-msgstr "Não é possível ler os dados atuais."
+#~ msgid "Code d'accès PWA"
+#~ msgstr "Código de acesso PWA"
 
-#: Api/routes/utils-routes.php:26
-msgid "Token requis pour charger les listes."
-msgstr "Token necessário para carregar as listas."
+#~ msgid "Définir un nouveau code ici"
+#~ msgstr "Defina um novo código aqui"
 
-#: Api/routes/ia-routes.php:15
-msgid "Configuration Groq manquante."
-msgstr "Configuração Groq ausente."
+#~ msgid ""
+#~ "Utilisez ce code spécifique pour vous connecter à l'application mobile. "
+#~ "(Laissez vide pour ne pas changer)"
+#~ msgstr ""
+#~ "Use este código específico para entrar no aplicativo móvel. (Deixe em "
+#~ "branco para não alterar)"
 
-#: Api/routes/ia-routes.php:67
-msgid "Erreur IA Applicompta : %s"
-msgstr "Erro IA Applicompta: %s"
+#~ msgid "Intégration Invoice Ninja v5"
+#~ msgstr "Integração Invoice Ninja v5"
 
-#: Api/routes/ia-routes.php:68
-msgid "Erreur : %s"
-msgstr "Erro: %s"
+#~ msgid "Clé API (Token)"
+#~ msgstr "Chave API (Token)"
 
-#: Api/routes/expenses-routes.php:23
-msgid "Image manquante"
-msgstr "Imagem ausente"
+#~ msgid "La clé sera chiffrée en base de données."
+#~ msgstr "A chave será criptografada no banco de dados."
 
-#: Api/routes/expenses-routes.php:91
-msgid "Erreur Vision Groq : %s"
-msgstr "Erro Vision Groq: %s"
+#~ msgid "🚀 [APPLICOMPTA] Le rest-routes est chargé !"
+#~ msgstr "🚀 [APPLICOMPTA] rest-routes foi carregado!"
 
-#: Api/routes/documents-routes.php:86
-msgid "Client obligatoire"
-msgstr "Cliente obrigatório"
-
-#: Api/routes/documents-routes.php:132
-msgid "Inconnue"
-msgstr "Desconhecido"
-
-#: Api/routes/documents-routes.php:133
-msgid "Erreur sauvegarde : %s"
-msgstr "Erro ao salvar: %s"
-
-#: Api/routes/documents-routes.php:194
-msgid "Devis introuvable"
-msgstr "Orçamento não encontrado"
-
-#: Api/routes/documents-routes.php:223
-msgid "Le client n'a aucune adresse email valide."
-msgstr "O cliente não tem um endereço de e-mail válido."
-
-#: Api/routes/documents-routes.php:246
-msgid "Accepter et Signer en ligne"
-msgstr "Aceitar e assinar online"
-
-#: Api/routes/documents-routes.php:267
-msgid "Erreur Gotenberg"
-msgstr "Erro Gotenberg"
-
-#: Api/routes/documents-routes.php:301
-msgid "Gotenberg Connection Error: %s"
-msgstr "Erro de conexão com Gotenberg: %s"
-
-#: Api/routes/documents-routes.php:309
-msgid "Gotenberg Error (%d): %s"
-msgstr "Erro Gotenberg (%d): %s"
-
-#: Api/routes/documents-routes.php:323
-msgid "Configuration SMTP incomplète dans votre profil."
-msgstr "Configuração SMTP incompleta no seu perfil."
-
-#: Api/routes/documents-routes.php:376
-msgid "Email envoyé avec succès à %s"
-msgstr "E-mail enviado com sucesso para %s"
-
-#: Api/routes/documents-routes.php:379
-msgid "Détail Erreur SMTP : %s"
-msgstr "Detalhe do erro SMTP: %s"
-
-#: Api/routes/documents-routes.php:380
-msgid "Erreur d'authentification : %s"
-msgstr "Erro de autenticação: %s"
-
-#: Api/routes/documents-routes.php:459
-msgid "Données manquantes"
-msgstr "Dados ausentes"
-
-#: Api/routes/documents-routes.php:465
-msgid "Lien expiré."
-msgstr "Link expirado."
-
-#: Api/routes/documents-routes.php:506
-msgid "Devis signé ! (ID: %s)"
-msgstr "Orçamento assinado! (ID: %s)"
-
-#: Api/routes/documents-routes.php:511
-msgid "Erreur mail confirmation signature: %s"
-msgstr "Erro no e-mail de confirmação de assinatura: %s"
-
-#: Api/routes/documents-routes.php:529
-msgid "Signature électronique introuvable pour ce devis."
-msgstr "Assinatura eletrônica não encontrada para este orçamento."
+#~ msgid "Accepter et Signer en ligne"
+#~ msgstr "Aceitar e assinar online"

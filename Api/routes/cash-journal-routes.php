@@ -32,6 +32,13 @@ defined('ABSPATH') || exit;
         'permission_callback' => $auth_callback
     ]);
 
+    register_rest_route('applicompta/v1', '/cash-journal/report/(?P<id>\d+)', [
+    'methods'  => 'GET',
+    'callback' => 'applicompta_get_z_report_pdf',
+    'permission_callback' => $auth_callback
+    
+    ]);
+
 function applicompta_get_cash_journal($request) {
     global $wpdb;
     
@@ -92,6 +99,20 @@ function applicompta_create_cash_entry($request) {
     if (!in_array($type, ['in','out'])) return new WP_Error('invalid_type', 'Invalid type', ['status' => 400]);
     $amount = floatval($data['amount']);
     if (!is_numeric($data['amount']) || $amount <= 0) return new WP_Error('invalid_amount', 'Invalid amount', ['status' => 400]);
+
+    $open_past_journal = $wpdb->get_var($wpdb->prepare(
+    "SELECT date FROM $table_journal 
+     WHERE created_by = %d AND is_closed = 0 AND date < %s 
+     ORDER BY date ASC LIMIT 1",
+    $user_id, $date_only
+));
+
+if ($open_past_journal) {
+    return new WP_Error('past_journal_open', 
+        sprintf(__('Vous devez clôturer le journal du %s avant de saisir de nouvelles opérations.', 'applicompta'), $open_past_journal), 
+        ['status' => 403]
+    );
+}
 
     // Prevent creating entries for closed journals
        // --- 1. TROUVER OU CRÉER LE JOURNAL POUR CETTE DATE ---
@@ -179,46 +200,7 @@ if ($inserted === false) {
     return rest_ensure_response([ 'success' => true, 'entry' => $entry, 'journal' => $journal ]);
 }
 
-function applicompta_update_cash_entry($request) {
-    global $wpdb;
-    $id = intval($request['id']);
-    $data = json_decode($request->get_body(), true);
-    $table_entries = $wpdb->prefix . 'gest_cash_entries';
-    $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_entries WHERE id = %d", $id));
-    if (!$entry) return new WP_Error('not_found', 'Entry not found', ['status' => 404]);
 
-    // Prevent updates if the journal is closed for that date
-    $table_journal = $wpdb->prefix . 'gest_cash_journal';
-    $entry_date = date('Y-m-d', strtotime($entry->datetime));
-    $existing_j = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE date = %s", $entry_date));
-    if ($existing_j && intval($existing_j->is_closed) === 1) {
-        return new WP_Error('journal_closed', 'Journal is closed for this date', ['status' => 403]);
-    }
-
-    $update = [];
-    if (isset($data['amount'])) {
-        if (!is_numeric($data['amount']) || floatval($data['amount']) <= 0) return new WP_Error('invalid_amount', 'Invalid amount', ['status' => 400]);
-        $update['amount'] = floatval($data['amount']);
-    }
-    if (isset($data['type'])) {
-        $t = sanitize_text_field($data['type']);
-        if (!in_array($t, ['in','out'])) return new WP_Error('invalid_type', 'Invalid type', ['status' => 400]);
-        $update['type'] = $t;
-    }
-    if (isset($data['description'])) $update['description'] = sanitize_textarea_field($data['description']);
-
-    if (empty($update)) return new WP_Error('invalid_data', 'No fields to update', ['status' => 400]);
-
-    $res = $wpdb->update($table_entries, $update, [ 'id' => $id ]);
-    if ($res === false) return new WP_Error('db_error', 'Update failed', ['status' => 500]);
-
-    $entry = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_entries WHERE id = %d", $id));
-    // Recalculate journal totals for the entry date
-    $entry_date = date('Y-m-d', strtotime($entry->datetime));
-    $journal = applicompta_recalc_journal($entry_date);
-
-    return rest_ensure_response([ 'success' => true, 'entry' => $entry, 'journal' => $journal ]);
-}
 
 function applicompta_delete_cash_entry($request) {
     global $wpdb;
@@ -349,19 +331,77 @@ function applicompta_recalc_journal($date) {
 
 function applicompta_close_cash_journal($request) {
     global $wpdb;
+    $user_id = get_current_user_id();
+    $user = get_userdata($user_id);
     $date = $request->get_param('date') ?: date('Y-m-d');
     $table_journal = $wpdb->prefix . 'gest_cash_journal';
 
-    // ensure totals are up to date
-    $journal = applicompta_recalc_journal($date);
-    if (!$journal) return new WP_Error('no_journal', 'Journal not found', ['status' => 404]);
+    // 1. Sécurités habituelles
+    $current_journal = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table_journal WHERE date = %s AND created_by = %d",
+        $date, $user_id
+    ));
+    if (!$current_journal) return new WP_Error('no_journal', 'Journal introuvable.');
+    if ($current_journal->is_closed) return new WP_Error('already_closed', 'Déjà clôturé.');
 
-    $res = $wpdb->update($table_journal, [ 'is_closed' => 1, 'updated_at' => current_time('mysql') ], [ 'id' => $journal->id ]);
-    if ($res === false) return new WP_Error('db_error', 'Failed to close journal', ['status' => 500]);
+    // 2. Calcul du chaînage et du numéro Z
+    $last_closed_z = $wpdb->get_row($wpdb->prepare(
+        "SELECT z_number, fiscal_signature FROM $table_journal 
+         WHERE created_by = %d AND is_closed = 1 ORDER BY z_number DESC LIMIT 1",
+        $user_id
+    ));
 
-    $journal = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE id = %d", $journal->id));
-    applicompta_audit_log('CLOSE_JOURNAL', 'JOURNAL', $journal->id, "Clôture de la journée " . $date);
-    return rest_ensure_response([ 'success' => true, 'journal' => $journal ]);
+    $prev_sig = $last_closed_z ? $last_closed_z->fiscal_signature : str_repeat('0', 64);
+    $next_z_num = $last_closed_z ? (intval($last_closed_z->z_number) + 1) : 1;
+
+    // 3. Recalcul des totaux et Signature
+    $temp_journal = applicompta_recalc_journal($date); // On s'assure que les totaux IN/OUT sont à jour
+    
+    $data_to_sign = $prev_sig . $next_z_num . $temp_journal->total_in . $temp_journal->total_out . $temp_journal->closing_balance . $date . $user_id;
+    $fiscal_signature = hash('sha256', $data_to_sign);
+
+    // 4. MISE À JOUR DE LA BASE DE DONNÉES
+    $wpdb->update($table_journal, [
+        'is_closed'        => 1,
+        'z_number'         => $next_z_num,
+        'prev_z_signature' => $prev_sig,
+        'fiscal_signature' => $fiscal_signature,
+        'updated_at'       => current_time('mysql')
+    ], ['id' => $current_journal->id]);
+
+    // --- CRUCIAL : ON RECHARGE LE JOURNAL DEPUIS LA DB POUR AVOIR LES DONNÉES SCELLÉES ---
+    $journal_scelle = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_journal WHERE id = %d AND created_by = %d ", $current_journal->id, $user_id));
+    
+    // 5. Récupération des entrées pour le PDF
+    $entries = $wpdb->get_results($wpdb->prepare(
+    "SELECT * FROM {$wpdb->prefix}gest_cash_entries 
+     WHERE journal_id = %d 
+     AND created_by = %d 
+     ORDER BY datetime ASC", 
+    $journal_scelle->id, 
+    $user_id
+));
+
+    // 6. Génération du PDF avec les données scellées
+    $html = applicompta_generate_z_report_html($journal_scelle, $entries, $user);
+    $pdf_content = applicompta_generate_pdf_via_gotenberg($html);
+
+    $email_sent = false;
+    if ($pdf_content) {
+        $email_sent = applicompta_send_z_report_email($user, $journal_scelle, $pdf_content);
+    }
+
+    // 7. Log Audit
+    applicompta_audit_log('CLOSE_JOURNAL', 'JOURNAL', $journal_scelle->id, [
+        'z_number' => $next_z_num,
+        'sig'      => $fiscal_signature
+    ]);
+
+    return rest_ensure_response([
+        'success'    => true,
+        'z_number'   => $next_z_num,
+        'email_sent' => $email_sent
+    ]);
 }
 
 function applicompta_audit_log($action, $object_type, $object_id, $details = '') {
@@ -375,4 +415,134 @@ function applicompta_audit_log($action, $object_type, $object_id, $details = '')
         'ip_address'  => $_SERVER['REMOTE_ADDR'],
         'created_at' => current_time('mysql')
     ]);
+}
+
+function applicompta_generate_z_report_html($journal, $entries, $user) {
+    $logo_url = get_user_meta($user->ID, 'logo_url', true);
+    
+    // Calcul des totaux par méthode pour le résumé
+    $cash_total = 0; $card_total = 0;
+    foreach ($entries as $e) {
+        if ($e->payment_method === 'cash') $cash_total += $e->amount;
+        else $card_total += $e->amount;
+    }
+
+    ob_start(); ?>
+    <style>
+        body { font-family: sans-serif; color: #333; font-size: 11px; line-height: 1.4; }
+        .header { text-align: center; border-bottom: 2px solid #249191; padding-bottom: 10px; margin-bottom: 20px; }
+        .title { font-size: 18px; font-weight: bold; color: #249191; text-transform: uppercase; }
+        
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #f4f4f4; padding: 8px; text-align: left; border: 1px solid #ddd; font-weight: bold; }
+        td { padding: 8px; border: 1px solid #ddd; vertical-align: top; }
+        
+        .text-right { text-align: right; }
+        .storno-row { color: #d9534f; font-style: italic; background-color: #fff5f5; }
+        
+        .summary-table td { font-size: 13px; padding: 10px; }
+        .total-final { font-weight: bold; font-size: 15px; background: #eef7f7; }
+
+        .footer { margin-top: 30px; padding: 15px; background: #fffcf0; border: 1px dashed #cca; }
+        .hash-code { font-family: monospace; font-size: 9px; word-break: break-all; color: #666; display: block; margin-top: 5px; }
+    </style>
+
+    <div class="header">
+        <?php if($logo_url): ?><img src="<?= $logo_url ?>" style="max-width:140px; margin-bottom:10px;"><br><?php endif; ?>
+        <span class="title">Rapport de Clôture Fiscal Z n° <?= $journal->z_number ?></span>
+        <p>Date : <?= date('d/m/Y', strtotime($journal->date)) ?> | Utilisateur : <?= $user->display_name ?></p>
+    </div>
+
+    <h3>1. Résumé Financier</h3>
+    <table class="summary-table">
+        <tr><td>Solde Ouverture</td><td class="text-right"><?= number_format($journal->opening_balance, 2) ?> €</td></tr>
+        <tr><td>Total des Entrées (+)</td><td class="text-right"><?= number_format($journal->total_in, 2) ?> €</td></tr>
+        <tr><td>Total des Sorties (-)</td><td class="text-right"><?= number_format($journal->total_out, 2) ?> €</td></tr>
+        <tr class="total-final"><td>SOLDE DE CLÔTURE (Réel en caisse)</td><td class="text-right"><?= number_format($journal->closing_balance, 2) ?> €</td></tr>
+    </table>
+
+    <h3>2. Répartition par Mode de Paiement</h3>
+    <table>
+        <thead>
+            <tr><th>Mode</th><th class="text-right">Total</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Espèces (Cash)</td><td class="text-right"><?= number_format($cash_total, 2) ?> €</td></tr>
+            <tr><td>Carte / Bancontact / Virement</td><td class="text-right"><?= number_format($card_total, 2) ?> €</td></tr>
+        </tbody>
+    </table>
+
+    <h3>3. Détail des Opérations (Journal des ventes)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Heure</th>
+                <th width="45%">Description</th>
+                <th width="20%">Mode</th>
+                <th width="20%" class="text-right">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($entries as $e): 
+                $isStorno = ($e->status === 'storno'); ?>
+                <tr class="<?= $isStorno ? 'storno-row' : '' ?>">
+                    <td><?= date('H:i:s', strtotime($e->datetime)) ?></td>
+                    <td>
+                        <?= esc_html($e->description) ?>
+                        <?php if($isStorno): ?><br><small>(Annulation de la transaction #<?= $e->parent_id ?>)</small><?php endif; ?>
+                    </td>
+                    <td><?= strtoupper($e->payment_method) ?></td>
+                    <td class="text-right"><?= number_format($e->amount, 2) ?> €</td>
+                </tr>
+            <?php endforeach; ?>
+            <?php if (empty($entries)): ?>
+                <tr><td colspan="4" style="text-align:center;">Aucune opération enregistrée.</td></tr>
+            <?php endif; ?>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <strong>INTÉGRITÉ ET SÉCURITÉ FISCALE</strong><br><br>
+        <strong>Sceau Numérique (SHA-256) :</strong>
+        <span class="hash-code"><?= $journal->fiscal_signature ?></span>
+        
+        <strong>Chaînage Précédent :</strong>
+        <?php if ($journal->z_number > 1): ?>
+            <span style="font-size: 10px;">Lien vers Rapport Z-<?= $journal->z_number - 1 ?></span>
+        <?php else: ?>
+            <span style="font-size: 10px;">Document initial (Genesis)</span>
+        <?php endif; ?>
+        <span class="hash-code"><?= $journal->prev_z_signature ?></span>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
+function applicompta_send_z_report_email($user, $journal, $pdf_content) {
+    $host = get_user_meta($user->ID, 'smtp_host', true);
+    $port = (int)get_user_meta($user->ID, 'smtp_port', true);
+    $smtp_user = get_user_meta($user->ID, 'smtp_user', true);
+    $pass = applicompta_smtp_decrypt(get_user_meta($user->ID, 'smtp_pass_enc', true));
+
+    if (!$host || !$smtp_user || !$pass) return false;
+
+    require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+    require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+    require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+
+    $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+    try {
+        $mail->isSMTP(); $mail->Host = $host; $mail->SMTPAuth = true; $mail->Username = $smtp_user;
+        $mail->Password = $pass; $mail->Port = $port; $mail->CharSet = 'UTF-8';
+        $mail->SMTPSecure = ($port === 465) ? 'ssl' : 'tls';
+        $mail->setFrom($smtp_user, "Applicompta - Clôture Fiscale");
+        $mail->addAddress($user->user_email);
+        $mail->addStringAttachment($pdf_content, "Rapport_Z_n" . $journal->z_number . "_" . $journal->date . ".pdf");
+        $mail->isHTML(true);
+        $mail->Subject = "Votre Rapport Z n°" . $journal->z_number . " (" . $journal->date . ")";
+        $mail->Body = "Bonjour,<br><br>Votre journée a été clôturée avec succès. Vous trouverez ci-joint votre rapport scellé pour archivage légal.";
+        $mail->send();
+        return true;
+    } catch (Exception $e) { return false; }
 }

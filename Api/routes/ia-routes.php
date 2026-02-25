@@ -10,6 +10,7 @@ register_rest_route('applicompta/v1', '/ia/devis', [
 function applicompta_handle_ia_devis(WP_REST_Request $request) {
     $params = $request->get_json_params();
     $user_prompt = sanitize_textarea_field($params['prompt'] ?? '');
+    $lang = sanitize_text_field($params['lang'] ?? '');
 
     if (!defined('GROQ_API_KEY') || !defined('GROQ_BASE_URL')) {
         return new WP_Error('config_error', __('Configuration Groq manquante.', 'applicompta'), ['status' => 500]);
@@ -21,23 +22,45 @@ function applicompta_handle_ia_devis(WP_REST_Request $request) {
             ->withBaseUri(GROQ_BASE_URL) 
             ->make();
 
-        // PROMPT RENFORCÉ : On donne des instructions de calcul et un exemple
-        $system_prompt = "Tu es un assistant de facturation. Tu dois transformer une description en devis structuré.
-        INSTRUCTIONS :
-        1. Calcule les quantités totales (ex: 16h x 3 hommes = 48).
-        2. Réponds UNIQUEMENT par un objet JSON valide.
-        3. N'ajoute AUCUN texte avant ou après le JSON.
+        // PROMPT RENFORCÉ : on précise un ton professionnel et des descriptions riches
+        $system_prompt = "Tu es un assistant professionnel de génération de devis pour des petites entreprises. \n" .
+            "Lorsque l'utilisateur décrit un besoin (produits ou services), tu dois générer un objet JSON complet représentant un devis \"prêt à envoyer\". \n" .
+            "Le texte (public_notes et notes de lignes) doit être rédigé dans un style clair, poli et commercial, avec des phrases complètes. \n" .
+            "Évite les abréviations ou listes sèches : chaque élément doit ressembler à une ligne d'un devis professionnel. \n" .
+            "Tu réponds STRICTEMENT par un JSON valide, sans aucun autre texte.\n\n" .
+            "INSTRUCTIONS :\n" .
+            "1. Calcule les quantités totales si l'utilisateur les mentionne (ex : 16h x 3 hommes = 48).\n" .
+            "2. Fournis un champ \"public_notes\" contenant un court paragraphe de présentation du projet.\n" .
+            "3. Dans l'array \"line_items\", chaque objet doit contenir :\n" .
+            "   - \"notes\" : description professionnelle du service/produit (une ou deux phrases).\n" .
+            "   - \"cost\" : montant numérique sans symbole de devise.\n" .
+            "   - \"quantity\" : nombre.\n" .
+            "4. N'ajoute AUCUN texte avant ou après le JSON. Aucune balise, aucun commentaire.\n\n" .
+            "STRUCTURE ATTENDUE :\n" .
+            "{\n" .
+            "  \"public_notes\": \"Titre ou résumé du projet\",\n" .
+            "  \"line_items\": [\n" .
+            "    { \"notes\": \"Description précise\", \"cost\": 100.00, \"quantity\": 1 }\n" .
+            "  ]\n" .
+            "}\n\n" .
+            "EXEMPLE DE SORTIE :\n" .
+            "{ \"public_notes\": \"Peinture salon avec préparation soignée des surfaces et deux couches de peinture acrylique.\", \"line_items\": [{ \"notes\": \"Main d'oeuvre : ponçage, apprêt et application de peinture (20 m²)\", \"cost\": 50, \"quantity\": 10 }] }";
 
-        STRUCTURE ATTENDUE :
-        {
-          \"public_notes\": \"Titre ou résumé du projet\",
-          \"line_items\": [
-            { \"notes\": \"Description précise\", \"cost\": 100.00, \"quantity\": 1 }
-          ]
+        // si une langue de sortie est précisée, on la demande explicitement au modèle
+        if ($lang) {
+            $languageNames = [
+                'fr' => 'français',
+                'en' => 'anglais',
+                'nl' => 'néerlandais',
+                'es' => 'espagnol',
+                'pt' => 'portugais',
+                'tr' => 'turc',
+                'ro' => 'roumain',
+                'pl' => 'polonais'
+            ];
+            $target = $languageNames[$lang] ?? $lang;
+            $system_prompt .= "\n\nRédige les textes (public_notes et notes des lignes) en $target.";
         }
-
-        EXEMPLE DE SORTIE :
-        { \"public_notes\": \"Peinture salon\", \"line_items\": [{ \"notes\": \"Main d'oeuvre\", \"cost\": 50, \"quantity\": 10 }] }";
 
         $response = $client->chat()->create([
             'model' => defined('GROQ_MODEL') ? GROQ_MODEL : 'llama-3.3-70b-versatile',
