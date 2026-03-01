@@ -209,3 +209,43 @@ msgstr "Merhaba Dünya! Eklenti başarıyla bağlandı."
 
 #~ msgid "Accepter et Signer en ligne"
 #~ msgstr "Çevrimiçi kabul et ve imzala"
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr "Teklif"
+
+#: added for missing key on 2026-02-25
+msgid "Date"
+msgstr "Tarih"
+
+#: added for missing key on 2026-02-25
+msgid "Destinataire"
+msgstr "Alıcı"
+
+#: added for missing key on 2026-02-25
+msgid "Description"
+msgstr "Açıklama"
+
+#: added for missing key on 2026-02-25
+msgid "Qté"
+msgstr "Miktar"
+
+#: added for missing key on 2026-02-25
+msgid "Prix Unitaire"
+msgstr "Birim Fiyat"
+
+#: added for missing key on 2026-02-25
+msgid "Total"
+msgstr "Toplam"
+
+#: added for missing key on 2026-02-25
+msgid "TOTAL À PAYER"
+msgstr "ÖDENECEK TOPLAM"
+
+#: added for missing key on 2026-02-25
+msgid "Ce devis est valable 30 jours. Pour l'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr "Bu teklif 30 gün geçerlidir. Kabul etmek için lütfen aşağıdaki düğmeye tıklayın:"
+
+#: added for missing key on 2026-02-25
+msgid "Merci pour votre confiance."
+msgstr "Güveniniz için teşekkür ederiz."

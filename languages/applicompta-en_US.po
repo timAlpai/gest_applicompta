@@ -201,3 +201,43 @@ msgstr "Signature confirmation email error: %s"
 #: Api/routes/documents-routes.php:529
 msgid "Signature électronique introuvable pour ce devis."
 msgstr "Electronic signature not found for this quote."
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr "Quote"
+
+#: added for missing key on 2026-02-25
+msgid "Date"
+msgstr "Date"
+
+#: added for missing key on 2026-02-25
+msgid "Destinataire"
+msgstr "Recipient"
+
+#: added for missing key on 2026-02-25
+msgid "Description"
+msgstr "Description"
+
+#: added for missing key on 2026-02-25
+msgid "Qté"
+msgstr "Qty"
+
+#: added for missing key on 2026-02-25
+msgid "Prix Unitaire"
+msgstr "Unit Price"
+
+#: added for missing key on 2026-02-25
+msgid "Total"
+msgstr "Total"
+
+#: added for missing key on 2026-02-25
+msgid "TOTAL À PAYER"
+msgstr "TOTAL TO PAY"
+
+#: added for missing key on 2026-02-25
+msgid "Ce devis est valable 30 jours. Pour l'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr "This quote is valid for 30 days. To accept it, please click the button below:"
+
+#: added for missing key on 2026-02-25
+msgid "Merci pour votre confiance."
+msgstr "Thank you for your trust."

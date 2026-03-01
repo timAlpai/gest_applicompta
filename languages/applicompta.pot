@@ -204,3 +204,44 @@ msgstr ""
 #: Api/routes/documents-routes.php:529
 msgid "Signature électronique introuvable pour ce devis."
 msgstr ""
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr ""
+
+
+#: Api/routes/documents-routes.php:259
+msgid "Date"
+msgstr ""
+
+#: Api/routes/documents-routes.php:261
+msgid "Destinataire"
+msgstr ""
+
+#: Api/routes/documents-routes.php:262
+msgid "Description"
+msgstr ""
+
+#: Api/routes/documents-routes.php:263
+msgid "Qté"
+msgstr ""
+
+#: Api/routes/documents-routes.php:263
+msgid "Prix Unitaire"
+msgstr ""
+
+#: Api/routes/documents-routes.php:263
+msgid "Total"
+msgstr ""
+
+#: Api/routes/documents-routes.php:263
+msgid "TOTAL À PAYER"
+msgstr ""
+
+#: Api/routes/documents-routes.php:267
+msgid "Ce devis est valable 30 jours. Pour l\'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr ""
+
+#: Api/routes/documents-routes.php:267
+msgid "Merci pour votre confiance."
+msgstr ""

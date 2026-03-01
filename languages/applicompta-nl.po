@@ -209,3 +209,43 @@ msgstr "Hallo wereld! De plugin is correct verbonden."
 
 #~ msgid "Accepter et Signer en ligne"
 #~ msgstr "Accepteer en teken online"
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr "Offerte"
+
+#: added for missing key on 2026-02-25
+msgid "Date"
+msgstr "Datum"
+
+#: added for missing key on 2026-02-25
+msgid "Destinataire"
+msgstr "Ontvanger"
+
+#: added for missing key on 2026-02-25
+msgid "Description"
+msgstr "Beschrijving"
+
+#: added for missing key on 2026-02-25
+msgid "Qté"
+msgstr "Aantal"
+
+#: added for missing key on 2026-02-25
+msgid "Prix Unitaire"
+msgstr "Eenheidsprijs"
+
+#: added for missing key on 2026-02-25
+msgid "Total"
+msgstr "Totaal"
+
+#: added for missing key on 2026-02-25
+msgid "TOTAL À PAYER"
+msgstr "TOTAAL TE BETALEN"
+
+#: added for missing key on 2026-02-25
+msgid "Ce devis est valable 30 jours. Pour l'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr "Deze offerte is 30 dagen geldig. Om deze te accepteren, klik op de onderstaande knop:"
+
+#: added for missing key on 2026-02-25
+msgid "Merci pour votre confiance."
+msgstr "Dank u voor uw vertrouwen."

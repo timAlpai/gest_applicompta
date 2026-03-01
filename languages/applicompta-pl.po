@@ -209,3 +209,43 @@ msgstr "Cześć świecie! Wtyczka jest poprawnie połączona."
 
 #~ msgid "Accepter et Signer en ligne"
 #~ msgstr "Akceptuj i podpisz online"
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr "Oferta"
+
+#: added for missing key on 2026-02-25
+msgid "Date"
+msgstr "Data"
+
+#: added for missing key on 2026-02-25
+msgid "Destinataire"
+msgstr "Odbiorca"
+
+#: added for missing key on 2026-02-25
+msgid "Description"
+msgstr "Opis"
+
+#: added for missing key on 2026-02-25
+msgid "Qté"
+msgstr "Ilość"
+
+#: added for missing key on 2026-02-25
+msgid "Prix Unitaire"
+msgstr "Cena jednostkowa"
+
+#: added for missing key on 2026-02-25
+msgid "Total"
+msgstr "Razem"
+
+#: added for missing key on 2026-02-25
+msgid "TOTAL À PAYER"
+msgstr "SUMA DO ZAPŁATY"
+
+#: added for missing key on 2026-02-25
+msgid "Ce devis est valable 30 jours. Pour l'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr "Ta oferta jest ważna przez 30 dni. Aby ją zaakceptować, kliknij przycisk poniżej:"
+
+#: added for missing key on 2026-02-25
+msgid "Merci pour votre confiance."
+msgstr "Dziękujemy za zaufanie."

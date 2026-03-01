@@ -91,3 +91,46 @@ function applicompta_handle_ia_devis(WP_REST_Request $request) {
         return new WP_Error('ia_api_error', sprintf( __('Erreur : %s', 'applicompta'), $e->getMessage() ), ['status' => 500]);
     }
 }
+
+register_rest_route('applicompta/v1', '/ia/devis_langue', [
+    'methods'  => 'POST',
+    'callback' => 'applicompta_handle_ia_devis_langue',
+    'permission_callback' => 'applicompta_check_jwt_permission',
+]);
+
+function applicompta_handle_ia_devis_langue(WP_REST_Request $request) {
+    $params = $request->get_json_params();
+    $user_prompt = sanitize_textarea_field($params['prompt'] ?? '');
+    
+
+    if (!defined('GROQ_API_KEY') || !defined('GROQ_BASE_URL')) {
+        return new WP_Error('config_error', __('Configuration Groq manquante.', 'applicompta'), ['status' => 500]);
+    }
+    try {
+        $client = \OpenAI::factory()
+            ->withApiKey(GROQ_API_KEY)
+            ->withBaseUri(GROQ_BASE_URL) 
+            ->make();
+
+        $response = $client->chat()->create([
+            'model' => defined('GROQ_MODEL') ? GROQ_MODEL : 'llama-3.3-70b-versatile',
+            'messages' => [
+                ['role' => 'system', 'content' => "Tu es un assistant de traduction professionnel. detecte la langue utilisée dans la description des produits."],
+                ['role' => 'user', 'content' => "dans quelle langue est ce texte  ? : " . $user_prompt . "réponds uniquement par le code iso de la langue, sans autre texte ni ponctuation."],
+            ],
+            'temperature' => 0.1,
+        ]);
+
+        $translated_text = $response->choices[0]->message->content;
+
+        return new WP_REST_Response([
+            'success' => true,
+            'data'    => ['translated_text' => $translated_text]
+        ], 200);
+
+    } catch (Exception $e) {
+        error_log( sprintf(__('Erreur IA Applicompta : %s', 'applicompta'), $e->getMessage()) );
+        return new WP_Error('ia_api_error', sprintf( __('Erreur : %s', 'applicompta'), $e->getMessage() ), ['status' => 500]);
+    }
+
+}//fin function

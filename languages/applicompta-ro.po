@@ -209,3 +209,43 @@ msgstr "Salut lume! Pluginul este conectat corect."
 
 #~ msgid "Accepter et Signer en ligne"
 #~ msgstr "Acceptați și semnați online"
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr "Ofertă"
+
+#: added for missing key on 2026-02-25
+msgid "Date"
+msgstr "Dată"
+
+#: added for missing key on 2026-02-25
+msgid "Destinataire"
+msgstr "Destinatar"
+
+#: added for missing key on 2026-02-25
+msgid "Description"
+msgstr "Descriere"
+
+#: added for missing key on 2026-02-25
+msgid "Qté"
+msgstr "Cantitate"
+
+#: added for missing key on 2026-02-25
+msgid "Prix Unitaire"
+msgstr "Preț unitar"
+
+#: added for missing key on 2026-02-25
+msgid "Total"
+msgstr "Total"
+
+#: added for missing key on 2026-02-25
+msgid "TOTAL À PAYER"
+msgstr "TOTAL DE PLATĂ"
+
+#: added for missing key on 2026-02-25
+msgid "Ce devis est valable 30 jours. Pour l'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr "Această ofertă este valabilă 30 de zile. Pentru a o accepta, faceți clic pe butonul de mai jos:"
+
+#: added for missing key on 2026-02-25
+msgid "Merci pour votre confiance."
+msgstr "Vă mulțumim pentru încredere."

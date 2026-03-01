@@ -209,3 +209,43 @@ msgstr "Olá Mundo! O plugin está bem conectado."
 
 #~ msgid "Accepter et Signer en ligne"
 #~ msgstr "Aceitar e assinar online"
+
+#: added for missing key on 2026-02-25
+msgid "DEVIS"
+msgstr "Orçamento"
+
+#: added for missing key on 2026-02-25
+msgid "Date"
+msgstr "Data"
+
+#: added for missing key on 2026-02-25
+msgid "Destinataire"
+msgstr "Destinatário"
+
+#: added for missing key on 2026-02-25
+msgid "Description"
+msgstr "Descrição"
+
+#: added for missing key on 2026-02-25
+msgid "Qté"
+msgstr "Quantidade"
+
+#: added for missing key on 2026-02-25
+msgid "Prix Unitaire"
+msgstr "Preço Unitário"
+
+#: added for missing key on 2026-02-25
+msgid "Total"
+msgstr "Total"
+
+#: added for missing key on 2026-02-25
+msgid "TOTAL À PAYER"
+msgstr "TOTAL A PAGAR"
+
+#: added for missing key on 2026-02-25
+msgid "Ce devis est valable 30 jours. Pour l'accepter, veuillez cliquer sur le bouton ci-dessous :"
+msgstr "Este orçamento é válido por 30 dias. Para aceitá-lo, clique no botão abaixo:"
+
+#: added for missing key on 2026-02-25
+msgid "Merci pour votre confiance."
+msgstr "Obrigado pela sua confiança."

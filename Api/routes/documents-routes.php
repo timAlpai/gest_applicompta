@@ -240,7 +240,7 @@ function applicompta_send_quote_email($request) {
             <td style='padding:10px; border-bottom:1px solid #eee; text-align:right;'><strong>{$total_line} €</strong></td>
         </tr>";
     }
-
+    
     $sign_token = wp_hash($quote_id . $user_id);
     $sign_url = "https://portal.applicompta.be/sign.html?id=$quote_id&token=$sign_token&u=$user_id";
     $sign_button = "<a href='$sign_url' style='display:inline-block; padding:12px 25px; background:#27ae60; color:white; text-decoration:none; border-radius:5px; font-weight:bold;'>" . esc_html__('Accepter et Signer en ligne', 'applicompta') . "</a>";
@@ -254,7 +254,19 @@ function applicompta_send_quote_email($request) {
         '{{CLIENT_DETAILS}}'=> $quote['client']['address1'] . " " . $quote['client']['city'],
         '{{TABLE_ITEMS}}'   => $items_html,
         '{{TOTAL}}'         => number_format($quote['amount'], 2, ',', ' '),
-        '{{SIGN_LINK}}'     => $sign_button
+        '{{SIGN_LINK}}'     => $sign_button,
+        // --- I18N VARIABLES AUTOMATIQUES ---
+        '{{LBL_QUOTE}}'        => __('DEVIS', 'applicompta'),
+        '{{LBL_DATE}}'         => __('Date', 'applicompta'),
+        '{{LBL_RECIPIENT}}'    => __('Destinataire', 'applicompta'),
+        '{{LBL_DESCRIPTION}}'  => __('Description', 'applicompta'),
+        '{{LBL_QTY}}'          => __('Qté', 'applicompta'),
+        '{{LBL_UNIT_PRICE}}'   => __('Prix Unitaire', 'applicompta'),
+        '{{LBL_TOTAL}}'        => __('Total', 'applicompta'),
+        '{{LBL_TOTAL_DUE}}'    => __('TOTAL À PAYER', 'applicompta'),
+        '{{LBL_VALIDITY}}'     => __('Ce devis est valable 30 jours. Pour l\'accepter, veuillez cliquer sur le bouton ci-dessous :', 'applicompta'),
+        '{{LBL_THANKS}}'       => __('Merci pour votre confiance.', 'applicompta'),
+    
     ];
 
     $final_html = $template;
